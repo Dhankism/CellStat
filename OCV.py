@@ -173,10 +173,10 @@ class Fenetre1(QWidget):
                 QWidget.__init__(self) # initialisation du qwidget
                 self.toolBar = QToolBar() # creation du toolbar
                 
-                self.label =QLabel(" Enter the port's number (Return => default port) : ") # creation du qlabel
-                self.champ = QLineEdit() # creation de QlineEdit pour rentrer les information
+                self.luserportnumber =QLabel(" Enter the port's number (Return => default port) : ") # creation du qlabel
+                self.userportnumber = QLineEdit() # creation de QlineEdit pour rentrer les information
                 
-                self.label2 = QLabel(" Enter the i range (Return => ±20uA) : ") # creation du qlabel
+                self.lirange = QLabel(" Enter the i range (Return => ±20uA) : ") # creation du qlabel
                # self.champ2 = QLineEdit() # creation de QlineEdit pour rentrer les information
                 
                 self.radioGroup = QButtonGroup()  # Create a button group for radio buttons
@@ -188,7 +188,7 @@ class Fenetre1(QWidget):
                         self.radioGroup.addButton(radioBtn)
                         self.radioButtons.append(radioBtn)
                 
-                self.labelq = QLabel(" Enter the Cap value in F (Return => 200 pF): ") # creation du qlabel
+                self.lcaprange = QLabel(" Enter the Cap value in F (Return => 200 pF): ") # creation du qlabel
           
                 self.radioGroup1 = QButtonGroup()  # Create a button group for radio buttons
                 self.radioButtons1 = []  # List to store the radio buttons
@@ -201,30 +201,29 @@ class Fenetre1(QWidget):
 
                 
                 
-                self.label3 = QLabel(text=" Enter the curent unit (mA, uA, nA or pA) (Return => uA) : ") # creation du qlabel
-                self.champ3 = QLineEdit()# creation de QlineEdit pour rentrer les information
+                self.lcurrentunit = QLabel(text=" Enter the curent unit (mA, uA, nA or pA) (Return => uA) : ") # creation du qlabel
+                self.usercurrentunit = QLineEdit()# creation de QlineEdit pour rentrer les information
 
 
                 #self.label4 = QLabel(text=" Enter a number for the starting of indexing file (Return => 0) : ")
                 #self.champ4 = QLineEdit()
 
-                self.label5 = QLabel(text=" Enter the file name ( test is the default name )") # creation du qlabel
-                self.champ5 = QLineEdit() # creation de QlineEdit pour rentrer les information
+                self.lfilename = QLabel(text=" Enter the file name ( test is the default name )") # creation du qlabel
+                self.userfilename = QLineEdit() # creation de QlineEdit pour rentrer les information
                 
-                self.label6 = QLabel(text=" Enter the number of cycles") # creation du qlabel
-                self.champ6 = QLineEdit() # creation de QlineEdit pour rentrer les information
+                self.lpotential = QLabel(text=" Enter the potential in V") # creation du qlabel
+                self.userV = QLineEdit() # creation de QlineEdit pour rentrer les information
                 
-                self.label7 = QLabel(text=" Enter the start potential") # creation du qlabel
-                self.champ7 = QLineEdit() # creation de QlineEdit pour rentrer les information
+                self.lscanrate = QLabel(text=" Enter scan rate in scan per min") # creation du qlabel
+                self.userscanrate = QLineEdit() # creation de QlineEdit pour rentrer les information
                 
-                self.label8 = QLabel(text=" Enter the first inversion potential") # creation du qlabel
-                self.champ8 = QLineEdit() # creation de QlineEdit pour rentrer les information
+                self.lrefreshrate = QLabel(text=" Enter refresh rate per min ") # creation du qlabel
+                self.userrefreshrate = QLineEdit() # creation de QlineEdit pour rentrer les information
                 
-                self.label9 = QLabel(text=" Enter the second inversion potential") # creation du qlabel
-                self.champ9 = QLineEdit() # creation de QlineEdit pour rentrer les information
-                
-                self.label10 = QLabel(text=" Enter the scan speed") # creation du qlabel
-                self.champ10 = QLineEdit() # creation de QlineEdit pour rentrer les information
+                self.lscantime = QLabel(text=" Enter scan time") # creation du qlabel
+                self.usertime = QLineEdit() # creation de QlineEdit pour rentrer les information
+
+
 
                 self.figure = plt.Figure() # creation de la figure
                 self.canvas = FigureCanvas(self.figure) # creation du canvas qui prend comme argument la figure
@@ -235,12 +234,9 @@ class Fenetre1(QWidget):
                 self.bouton = QPushButton("Start")
                 self.bouton.clicked.connect(self.principal) # relier le boutton avec la fonction principal qui s'excute quand on clic sur le boutton
                 
+               # self.bouton.clicked.connect() # 
+                
 
-               # menubar = QMenuBar() # creation du Qmenubar
-                #fileMenu = menubar.addMenu("file") # ajouter un menu qui s'appel file a ce menu bar
-                #saveAction = QAction("Save", self) # creation d'une action 
-                #fileMenu.addAction(saveAction) # ajouter l'action au menu file
-                #saveAction.triggered.connect(self.save) 
 
                 self.button = QPushButton("Save")
                 self.button.clicked.connect(self.save)# on connecter l'action a la fonction save si il y une action sur save action on declanche la fonction save
@@ -249,32 +245,26 @@ class Fenetre1(QWidget):
                 self.image.fill(Qt.white)
                 
                 topLayout = QVBoxLayout() # creation  du QVBoxLayout
-                topLayout.addWidget(self.label6) # ajouter le label6 a ce layout
-                topLayout.addWidget(self.label7) # ajouter le label7 a ce layout
-                topLayout.addWidget(self.label8) # ajouter le label8 a ce layout
-                topLayout.addWidget(self.label9) # ajouter le label9 a ce layout
-                topLayout.addWidget(self.label10) # ajouter le label10 a ce layout
+                topLayout.addWidget(self.lpotential) # ajouter le label6 a ce layout
+                topLayout.addWidget(self.lscanrate) # ajouter le label7 a ce layout
+                topLayout.addWidget(self.lrefreshrate) # ajouter le label8 a ce layout
+                topLayout.addWidget(self.lscantime) # ajouter le label9 a ce layout
                 
                 topLayout1 = QVBoxLayout() # creation  du QVBoxLayout
-                topLayout1.addWidget(self.champ6)  # ajouter le champ6 ( qLinEedit ) a ce layout
-                topLayout1.addWidget(self.champ7) # ajouter le champ7 ( qLinEedit ) a ce layout
-                topLayout1.addWidget(self.champ8) # ajouter le champ8 ( qLinEedit ) a ce layout
-                topLayout1.addWidget(self.champ9) # ajouter le champ9 ( qLinEedit ) a ce layout
-                topLayout1.addWidget(self.champ10) # ajouter le champ10 ( qLinEedit ) a ce layout
+                topLayout1.addWidget(self.userV)  # ajouter le champ6 ( qLinEedit ) a ce layout
+                topLayout1.addWidget(self.userscanrate) # ajouter le champ7 ( qLinEedit ) a ce layout
+                topLayout1.addWidget(self.userrefreshrate) # ajouter le champ8 ( qLinEedit ) a ce layout
+                topLayout1.addWidget(self.usertime)
               
                 topLayout4 = QVBoxLayout() # creation  du QVBoxLayout
-                #topLayout4.addWidget(menubar)   # ajouter menu bar a la position (0,0) et prend toute la largeur
-                topLayout4.addWidget(self.label) # ajouter le label a ce layout
-                topLayout4.addWidget(self.label2)
-                topLayout4.addWidget(self.labelq) # ajouter le label2 a ce layout
-                topLayout4.addWidget(self.label3) # ajouter le label3 a ce layout
-                #topLayout4.addWidget(self.label4) 
-                topLayout4.addWidget(self.label5) # ajouter le label5 a ce layout
+                topLayout4.addWidget(self.luserportnumber) # ajouter le label a ce layout
+                topLayout4.addWidget(self.lirange)
+                topLayout4.addWidget(self.lcaprange) # ajouter le label2 a ce layout
+                topLayout4.addWidget(self.lcurrentunit) # ajouter le label3 a ce layout
+                topLayout4.addWidget(self.lfilename) # ajouter le label5 a ce layout
                 
                 topLayout5 = QVBoxLayout() # creation  du QVBoxLayout
-                #topLayout5.addWidget(menubar)   # ajouter menu bar a la position (0,0) et prend toute la largeur
-                topLayout5.addWidget(self.champ) # ajouter le champ ( qLinEedit ) a ce layout
-                
+                topLayout5.addWidget(self.userportnumber) # ajouter le champ ( qLinEedit ) a ce layout
 
                 topLayout6 = QHBoxLayout()
                 for i, radioBtn in enumerate(self.radioButtons):
@@ -290,9 +280,9 @@ class Fenetre1(QWidget):
 
 
                # topLayout5.addWidget(self.champ2) # ajouter le champ2 ( qLinEedit ) a ce layout
-                topLayout5.addWidget(self.champ3) # ajouter le champ3 ( qLinEedit ) a ce layout
+                topLayout5.addWidget(self.usercurrentunit) # ajouter le champ3 ( qLinEedit ) a ce layout
                 #topLayout5.addWidget(self.champ4)
-                topLayout5.addWidget(self.champ5) # ajouter le champ5 ( qLinEedit ) a ce layou
+                topLayout5.addWidget(self.userfilename) # ajouter le champ5 ( qLinEedit ) a ce layou
 
                
                 
@@ -354,7 +344,7 @@ class Fenetre1(QWidget):
                     #************************************************************************************************************************
                     #*on verifie si les champs obligatoire  son rempli on excute la fonction principal sinon on affiche un message d'erreur *
                     #************************************************************************************************************************
-                    if (self.champ.text()!="" and self.champ6.text()!="" and self.champ7.text()!="" and self.champ8.text()!="" and self.champ9.text()!="" ):
+                    if (self.userportnumber.text()!="" and self.userV.text()!="" and self.userscanrate.text()!="" and self.userrefreshrate.text()!=""  ):
                         self.principal()
                     else:
                         # message d'erreur qui indique que les champs obligatoire ne sont par rempli
@@ -435,7 +425,9 @@ class Fenetre1(QWidget):
                         self.ritaindex = selected_indices[0]
        
         #end of set_rtia function
-        
+         #*********************************
+        #* Function to set up CAP      *
+        #********************************* 
         def set_cap(self,board):
                 
                 selected_indices = [i for i, radio_btn in enumerate(self.radioButtons1) if radio_btn.isChecked()]
@@ -445,14 +437,14 @@ class Fenetre1(QWidget):
                         self.capindex=3 # Index of "200pF"
                 else:   
                         self.capindex=selected_indices[0]        
-                
+         #end of set_cap function        
 
         #*********************************
         #* Function to set up UNIT       *
         #********************************* 
         def set_unit(self,board):
                 global  c_unit
-                self.str_unit = self.champ3.text()
+                self.str_unit = self.usercurrentunit.text()
                 #si on entre la l'unité du courant on la stock quand c_unit sinon on stock la valeur par default
                 if (self.str_unit == self.EMPTY or self.str_unit == "uA"):
                         c_unit = self.COEFF_microA
@@ -467,93 +459,7 @@ class Fenetre1(QWidget):
                         c_unit = self.COEFF_microA
         
         #end of set_unit function
-                        
-        #****************************************
-        #* Function test the command received   *
-        #****************************************
-        def tst_cmd(self,received):
-                global cmd_code, cmd_status
-                # on cherche si l'argument est dans le contenaire CMD_AVA puis es qu'il est dans CMD_KEY et on lui donne la valeur approprier au cmd_stuts et cmd_code sinon on ecrit un message d'erreur
-                if (received not in self.CMD_AVA):
-                        if (received in self.CMD_KEY):
-                                print ("Command not available")
-                                cmd_status = False
-                        else:
-                                cmd_code = self.SET
-                                cmd_status = True
-                else:
-                        cmd_code = received
-                        cmd_status = True
-        #end of tst_cmd function
-                        
-        #****************************************
-        #* Function to set up acquisition size  *
-        #**************************************** 
-        def set_acq_size(self,board):
-                        global  nb_acq_tot
-                        if (board == self.ARDUINO):
-                                nb_acq_half_cycle = code_vstop - code_vstart
-                                if (self.nb_cycle == 1):
-                                        self.nb_acq_cycle[0] = (2 * nb_acq_half_cycle) + 1
-                                        nb_acq_tot = self.nb_acq_cycle[0]
-                                if (self.nb_cycle == 2):
-                                        self.nb_acq_cycle[0] = (2 * nb_acq_half_cycle) 
-                                        self.nb_acq_cycle[1] = self.nb_acq_cycle[0] + 1
-                                        nb_acq_tot = self.nb_acq_cycle[0] + self.nb_acq_cycle[1] 
-                                if (self.nb_cycle == 3):
-                                        self.nb_acq_cycle[0] = (2 * nb_acq_half_cycle)
-                                        self.nb_acq_cycle[1] = self.nb_acq_cycle[0]
-                                        self.nb_acq_cycle[2] = self.nb_acq_cycle[0] + 1
-                                        nb_acq_tot = self.nb_acq_cycle[0] + self.nb_acq_cycle[1] + self.nb_acq_cycle[2]
-                        if (board == self.TEENSY):
-                                nb_acq_half_cycle =  code_vstart - code_vstop
-                                nb_acq_half_cycle1 =  abs(code_vstop1 - code_vstop)
-                                nb_acq_half_cycle2 =  abs(code_vstop1 - code_vstart)
-                                if ( nb_acq_half_cycle < 0):
-                                        nb_acq_half_cycle = - nb_acq_half_cycle  
-                                if (self.nb_cycle == 1):
-                                        self.nb_acq_cycle[0] = (nb_acq_half_cycle2+nb_acq_half_cycle1 + nb_acq_half_cycle) + 1
-                                        nb_acq_tot = self.nb_acq_cycle[0]
-                                if (self.nb_cycle == 2):
-                                        self.nb_acq_cycle[0] = (nb_acq_half_cycle2+nb_acq_half_cycle1 + nb_acq_half_cycle) 
-                                        self.nb_acq_cycle[1] = self.nb_acq_cycle[0] + 1
-                                        nb_acq_tot = self.nb_acq_cycle[0] + self.nb_acq_cycle[1] 
-                                if (self.nb_cycle == 3):
-                                        self.nb_acq_cycle[0] = (nb_acq_half_cycle2+nb_acq_half_cycle1 + nb_acq_half_cycle)
-                                        self.nb_acq_cycle[1] = self.nb_acq_cycle[0]
-                                        self.nb_acq_cycle[2] = self.nb_acq_cycle[0] + 1
-                                        nb_acq_tot = self.nb_acq_cycle[0] + self.nb_acq_cycle[1] + self.nb_acq_cycle[2]
-                        
-                        print (nb_acq_tot, self.nb_acq_cycle[0], self.nb_acq_cycle[1], self.nb_acq_cycle[2]) 
-
-        #end of set_acq_size function
-                                        
-        #***************************************
-        #* Function to set up ACQ values       *
-        #***************************************
-        def set_acq_value(self,board):
-                global code_vstart, code_vstop,code_vstop1
-                if ( board == self.ARDUINO ):
-                        period = round(conv_period * self.QUANT_PWM/srate)           # compute the period according to srate
-                        str_vstart = str(int(round( vstart/(self.QUANT_PWM ) + self.OFFSET_PWM)))   # compute the DAC code for Vstart
-                        str_vstop  = str(int(round(  vstop/(self.QUANT_PWM ) + self.OFFSET_PWM)))   # compute the DAC code for Vstop
-                else:
-                        period = round(conv_period * quant_DAC/srate)           # compute the period according to srate
-                        str_vstart = str(int(round( vstart/(quant_DAC * gain) + offset_DAC)))   # compute the DAC code for Vstart
-                        str_vstop  = str(int(round(  vstop/(quant_DAC * gain) + offset_DAC)))   # compute the DAC code for Vstop
-                        str_vstop1  = str(int(round(  vstop1/(quant_DAC * gain) + offset_DAC)))   # compute the DAC code for Vstop
-                str_period = str(period)       
-                transmit = str_cycle + self.COMMA + str_vstart + self.COMMA + str_vstop + self.COMMA+ str_vstop1 + self.COMMA + str_period + self.COMMA + f"{self.ritaindex}"+ self.COMMA + f"{self.capindex}"
-                message = transmit.encode(self.UTF_8)
-                self.Arduino_Serial.write(message)
-                print ("You Transmitted :", transmit)
-                print ("Acquisition number/cycle :", 2*(int(str_vstart) - int(str_vstop) + 1))               
-                self.nb_cycle    = int(str_cycle)              
-                code_vstart = int(str_vstart)
-                code_vstop  = int(str_vstop)
-                code_vstop1  = int(str_vstop1)
-        #end of set_acq_value function
-                                        
+  
         #************************************
         #* Function to set up file          *
         #************************************ 
@@ -564,7 +470,7 @@ class Fenetre1(QWidget):
                 else:
                         file_name = self.FILE_NAME_TEENSY  
                 self.sauvegarde=self.fichier
-                self.fichier=self.champ5.text()
+                self.fichier=self.userfilename.text()
                 self.index_file +=1
                 if self.fichier == self.EMPTY :     
                     file_name = "test" + str(self.index_file ) + self.FILE_EXTENT 
@@ -584,111 +490,8 @@ class Fenetre1(QWidget):
                 
         #end of set_up_file function 
         
-        #************************************
-        #* Function to handle acquisition   *
-        #************************************ 
-        def get_acq(self):
-                
-                
-                global  index_param
-                i_acq = 0
-                ctrl_while = True
-                time.sleep(self.acq_time - 1) # to avoid a long time out for the serial link
-        
-                while (ctrl_while):
-                        # reads line from Arduino and 
-                        raw_data = self.Arduino_Serial.readline()
-                        # while raw_data[-1]!=0x0A: # Hangs indefinitely because it never receives anymore data at some point
-                        #        raw_data += self.Arduino_Serial.readline()
-
-                        data = raw_data[:-2]  # stips out NL + CR
-                        data_utf8 = data.decode(self.UTF_8)
-                        if ( data_utf8 != "" ):                          
-                                line = data_utf8.split(self.COMMA)
-                                
-                                if len(line) != 2:
-                                       print(f"The incoming data is incomplete of length: {len(line)}")
-                                       print(f"\tReceived data is: {raw_data}")
-                                       break
-
-                                print (i_acq,",",nb_acq_tot,",",data_utf8)
-                              
-                                if ( i_acq >= 0 and i_acq < self.nb_acq_cycle[0]):
-                                        i_cycle = 0
-                                if ( i_acq >= self.nb_acq_cycle[0] and i_acq < nb_acq_tot ):
-                                        i_cycle = 1
-                                if ( i_acq >= (self.nb_acq_cycle[0] + self.nb_acq_cycle[1]) and i_acq < nb_acq_tot ):
-                                        i_cycle = 2
-                                #print(index_acq, i_cycle)
-                                val_v = (int(line[0]) - offset_DAC) * gain * quant_DAC
-                                val_c = (int(line[1]) - offset_ADC) * quant_ADC * coeff_conv * (c_unit/self.rtia_val) # select COEFF_mA or COEFF_microA
-                                self.x_data[self.index_acq][i_cycle].append(val_v)                                                
-                                self.y_data[self.index_acq][i_cycle].append(val_c)
-                                
-                                
-                                data_file = (f"{val_v:.6f}") + self.COMMA + (f"{val_c:.6f}") # six decimals
-                                nbytes = file.write(data_file + self.NEW_LINE)   # write data from Arduino in the file + NL 
-                                i_acq = i_acq + 1
-
-                                
-                                if (i_acq == nb_acq_tot):
-                                        ctrl_while = False
-                index_param += 1
-                self.index_acq   += 1
-                file.flush()            # Don't forget to flush before closing the file
-                file.close
-                self.CMD_AVA[self.TRA] = self.CMD_TRA
-                self.Arduino_Serial.close()
-                #print(CMD_AVA)
-        #end of get_acq function
-                
-        #****************************************
-        #* Function to set acquisition limits   *
-        #****************************************
-        def set_acq_limits(self,params):
-                global f_cycle, str_cycle, vstart, vstop, srate , vstop1
-                for i in range(self.NB_PARAM) :
-                        if (i == 0 ):
-                            if (params[i] != self.EMPTY):
-                                 self.param[self.index_acq][0] = params[0]
-                            else:
-                                params[0] = self.param[self.index_acq - 1][0]
-                                self.param[self.index_acq][0] = params[0]
-                            f_cycle = float(params[0])
-                            str_cycle  = params[0]
-         
-                        elif (i == 1) :
-                            if (params[i] != self.EMPTY):
-                                self.param[self.index_acq][1] = params[1]
-                            else:
-                                params[1] = self.param[self.index_acq - 1][1]
-                                self.param[self.index_acq][1] = params[1]
-                            vstart  = float(params[1])
-                        
-                        elif (i == 2) :
-                            if (params[i] != self.EMPTY):
-                                self.param[self.index_acq][2] = params[2]
-                            else:
-                                params[2] = self.param[self.index_acq - 1][2]
-                                self.param[self.index_acq][2] = params[2]
-                            vstop   = float(params[2])
-                        elif (i == 3) :
-                            if (params[i] != self.EMPTY):
-                                self.param[self.index_acq][3] = params[3]
-                            else:
-                                params[3] = self.param[self.index_acq - 1][3]
-                                self.param[self.index_acq][3] = params[3]
-                            vstop1   = float(params[3])        # extracts the srate value in V/s
-                                                          
-                            
-                        elif (i == 4) :
-                            if (params[i] != self.EMPTY):
-                                self.param[self.index_acq][4] = params[4]
-                            else:
-                                params[4] = self.param[self.index_acq - 1][4]
-                                self.param[self.index_acq][4] = params[4]
-                            srate   = float(params[4])        # extracts the srate value in V/s
-                                                                                    
+  
+                                    
         #print(param[index_acq])
                                                            
         #********************************
@@ -706,10 +509,10 @@ class Fenetre1(QWidget):
                 self.ax.set_xlim(min(self.flat_x_data), max(self.flat_x_data))        # set x limits
                 self.ax.set_ylim(min(self.flat_y_data), max(self.flat_y_data))        # set y limits    
                 
-                if self.champ8.text()>self.champ9.text():
-                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.champ9.text()+ " V, " + self.champ8.text() + " V]")            # Title
+                if self.userrefreshrate.text()>self.champ9.text():
+                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.champ9.text()+ " V, " + self.userrefreshrate.text() + " V]")            # Title
                 else  :
-                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.champ8.text()+ " V, " + self.champ9.text() + " V]")            # Title
+                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.userrefreshrate.text()+ " V, " + self.champ9.text() + " V]")            # Title
 
                 self.ax.set_xlabel("E (V)")
                 if (self.str_unit == self.EMPTY or self.str_unit == "uA"):
@@ -727,41 +530,11 @@ class Fenetre1(QWidget):
                 
                                       
         def principal(self):
-                # on verifie si les champ obligatoire son rempli sinon on affiche un message d'erreur
-                if self.champ6.text()!="" and self.champ7.text()!="" and self.champ8.text()!="" and self.champ9.text()!="" and self.champ10.text()!="":
-                        # on verifie que le nombre de cycle et entre 1 et 3 si c'est le cas on verifi la valeur min et max des potentiel son correcte
-                         if float(self.champ6.text())>3 or float(self.champ6.text())<=0 :   
-                             # message d'erreur sur le nombre de cycle
-                             msg = QMessageBox()
-                             msg.setIcon(QMessageBox.Critical)
-                             msg.setText("Error")
-                             msg.setInformativeText('Max number of cycles equal to 3')
-                             msg.setWindowTitle("Error")
-                             msg.setWindowTitle('Quit')
-
-                             msg.exec_()
-                         elif (float(self.champ7.text())>2.5 or float(self.champ7.text())<=-2.5) or (float(self.champ8.text())>2.5 or float(self.champ8.text())<=-2.5) or (float(self.champ9.text())>2.5 or float(self.champ9.text())<=-2.5) :
-                             # message d'erreur la valeur du potentiel min et max
-                             msg = QMessageBox()
-                             msg.setIcon(QMessageBox.Critical)
-                             msg.setText("Error")
-                             msg.setInformativeText('the current supplied by the card is between -2.5 and 2.5')
-                             msg.setWindowTitle("Error")
-                             msg.setWindowTitle('Quit')
-
-                             msg.exec_()
-                         else:
-                            # on verifie si les potentiel son correctement initaliser     
-                             if (float(self.champ7.text())<=float(self.champ8.text()) and float(self.champ9.text())<=float(self.champ8.text()) and float(self.champ9.text())<=float(self.champ7.text())) or (float(self.champ7.text())>=float(self.champ8.text()) and float(self.champ9.text())>=float(self.champ8.text()) and float(self.champ9.text())>=float(self.champ7.text())):
-                                 # on definie ici les vecteur d'acquisition pour qu'a chaque fois on execute la fonction on reinitialise les valeur
-                                self.x_data = [[[] for j in range(self.MAX_CYCLE)] for i in range(self.MAX_ACQ)]
-                                self.y_data = [[[] for j in range(self.MAX_CYCLE)] for i in range(self.MAX_ACQ)]
-                                
                                 #********************************
                                 #* Entering the modem's number  *
                                 #********************************
                                 
-                                modem_number = self.champ.text()
+                                modem_number = self.userportnumber.text()
                                 if (modem_number == self.EMPTY):
                                         
                                         
@@ -779,7 +552,7 @@ class Fenetre1(QWidget):
                                 
                                 self.Arduino_Serial = serial.Serial(self.port_board, self.BAUD_RATE, timeout=self.TIME_OUT)
                                 time.sleep(self.DELAY_1s) #give the connection a second to settle
-                                msg="VoltaCyclique"
+                                msg="OCV"
                                 message = msg.encode(self.UTF_8)
                                 self.Arduino_Serial.write(message)
                                 time.sleep(self.DELAY_1s)      
@@ -795,159 +568,26 @@ class Fenetre1(QWidget):
                                 self.set_rtia(board)
                                 self.set_cap(board)
                                 self.set_unit(board)
+
+
+                                transmit = f"{}" + self.COMMA +  + self.COMMA + str_vstop + self.COMMA+ str_vstop1 + self.COMMA + str_period + self.COMMA + f"{self.ritaindex}"+ self.COMMA + f"{self.capindex}"
+                                message = msg.encode(self.UTF_8)
+                                self.Arduino_Serial.write(message)
+
+                                )  # ajouter le champ6 ( qLinEedit ) a ce layout
+                topLayout1.addWidget(self.userscanrate) # ajouter le champ7 ( qLinEedit ) a ce layout
+                topLayout1.addWidget(self.userrefreshrate) # ajouter le champ8 ( qLinEedit ) a ce layout
+                topLayout1.addWidget(self.usertime)
+
+
+
                                         
                                 #********************************
                                 #* Printing of input message    *
                                 #********************************
-                                print ("Enter Parameters like 2,-1.25,1.25,0.5 then ACQ to start acquisition and TRA to graph the data \n")
-                                i=0       
-                                #********************************
-                                #* Infinite loop                *
-                                #********************************                
-                                while True:
-                                        if (self.index_acq == self.MAX_ACQ):            # setting WARNING message
-                                                for w in range(8):
-                                                        print(self.WARNING[w])
-                                                self.CMD_AVA = {self.CMD: self.CMD_CMD, self.PAR: self.CMD_PAR, self.TRA: self.CMD_TRA, self.DEF: self.EMPTY, self.EXIT: self.CMD_EXIT}
-                                        
-                                        
-                                        # au debut on envoit les donner à l'arduino puis ACQ puis TRA puis EXIT
-                                        if i==0 :
-                                                received = self.champ6.text()+","+self.champ7.text()+","+self.champ8.text()+","+self.champ9.text()+","+self.champ10.text()
-                                        elif i==1:
-                                            received="ACQ"
-                                        elif i==2:
-                                            received="TRA"
-                                        elif i==3:
-                                            received="EXIT"
-                                            
-                                        self.tst_cmd(received)
-                                        #accepts input puts it in variable 'received'
-                                        if (cmd_code == self.SET and cmd_status == True): #in case you entered "1,-1.25,1.25,5"
-                                                #print ("You Entered :", received)   
-                                                self.params = [name.strip() for name in received.split(self.COMMA)]
-                                                self.set_acq_limits(self.params)
-                                                #print(f_cycle, vstart, vstop, srate)                                                     
-                                                self.acq_time = (2.0 * f_cycle * (abs(vstart - vstop) + abs(vstop-vstop1)+abs(vstop1-vstart))/srate) + delay_stab # add the delay to stabilize vstart
-                                                print( "The acquisition will take roughly : ", (f"{self.acq_time:.2f}"), " seconds")              
-                                                self.set_acq_value(board)
-                                                time.sleep(10*self.DELAY_01s)
-                                                self.CMD_AVA[self.ACQ] = self.CMD_ACQ
-                                                i=1 # pour passer à l'acquesition
-                                #********************************
-                                #* "ACQ" is received            *
-                                #********************************
-                                        if ( cmd_code == self.ACQ and cmd_status == True):                                 #if input is "ACQ"
-                                                message = received.encode(self.UTF_8)
-                                                self.Arduino_Serial.write(message)                                                                    
-                                                print(self.ACQ_START)
-                                                self.set_up_file(board)
-                                                time.sleep(self.DELAY_01s)                
-                                                self.set_acq_size(board)
-                                                self.set_acq_limits(self.params)
-                                                self.get_acq()
-                                                print (self.ACQ_END)
-                                                i=2  # pour passer au tracer
-                                #end of first if loop
-                                     
-                                
-                                #********************************
-                                #* "TRA" is received            *
-                                #********************************
-                                        if ( cmd_code == self.TRA and cmd_status == True):                                 #if input is "TRA"                                                                    
-                                                #acq_graph = input( "Enter the acquisition's number to graph [0," + str(index_acq -1) +"] (Return => last acq) : ")
-                                                #acq_graph=self.champ4.text()
-                                                acq_graph=""
-                                                if (acq_graph == self.EMPTY):
-                                                        index_acq_graph = self.index_acq - 1
-                                                else:
-                                                        index_acq_graph = int(acq_graph)
-                                                
-                                                print(self.TRA_START)
-                                                time.sleep(self.DELAY_01s)
-                                                self.plot_cycle (index_acq_graph)
-                                                print(self.TRA_END)
-                                                i=3  # pour sortir de la boucle
-                                        #end of if statement              
-                                
-                                 
-                                #*******************************
-                                #* "RTIA" is received           *
-                                #*******************************
-                                        if ( cmd_code == self.RTIA and cmd_status == True):
-                                                self.set_rtia(board)
-                                        # end of if statement
-                                
-                                #*******************************
-                                #* "UNIT" is received           *
-                                #*******************************
-                                        if ( cmd_code == self.UNIT and cmd_status == True):
-                                                self.set_unit(board)
-                                        # end of if statement
-                                
-                                #*******************************
-                                #* "PAR" is received           *
-                                #*******************************
-                                        if ( cmd_code == self.PAR and cmd_status == True):
-                                                #print (index_param)
-                                                for i in range(self.MAX_ACQ):                       
-                                                        str_param = "Acq " + str(i) + " :" + self.param[i][0]
-                                                        if ( i > (index_param - 1)):
-                                                                str_param = self.UNDEFINED
-                                                                for j in range(3):
-                                                                        str_param += self.COMMA + self.UNDEFINED
-                                                                print (str_param)
-                                                        else:
-                                                                for j in range(3):
-                                                                        str_param += self.COMMA + self.param[i][j+1]
-                                                                print (str_param)
-                                                      
-                                #********************************
-                                #* "FILE" is received           *
-                                #********************************
-                                        if ( cmd_code == self.FILE and cmd_status == True ):
-                                                str_file_index =self.champ5.text()
-                                                if (str_file_index == self.EMPTY):
-                                                        str_file_index = "0"
-                                                self.index_file = int(str_file_index)
-                                                self.set_up_file(board)
-                                                           
-                                # end of infinite loop
-                                
-                                #********************************
-                                #* "CMD" or "" is received      *
-                                #********************************
-                                        if (cmd_code == self.CMD or cmd_code == self.DEF) and cmd_status == True:
-                                                for key in self.CMD_AVA:
-                                                        if (key != self.EMPTY):
-                                                                print(key, self.CMD_AVA[key])
-                                                                
-                                #********************************
-                                #* "EXIT" is received           *
-                                #********************************
-                                        if (cmd_code == self.EXIT):
-                                                self.Arduino_Serial.close()
-                                                break
-                             else:
-                                 # message d'erreur sur les potentiels
-                                 msg = QMessageBox()
-                                 msg.setIcon(QMessageBox.Critical)
-                                 msg.setText("Error")
-                                 msg.setInformativeText('Incorrect potential input')
-                                 msg.setWindowTitle("Error")
-                                 msg.setWindowTitle('Quit')
 
-                                 msg.exec_()
-                else:
-                                #message d'erreur sur les champs obligatoire
-                                 msg = QMessageBox()
-                                 msg.setIcon(QMessageBox.Critical)
-                                 msg.setText("Error")
-                                 msg.setInformativeText('please enter at least the link port, the number of cycles, the start potential, the two insertion potentials, and the scan speed')
-                                 msg.setWindowTitle("Error")      
-                                 msg.setWindowTitle('Quit')
-
-                                 msg.exec_()
+                                       
+                              
 
 if __name__ == '__main__':
         app = QApplication.instance() 
