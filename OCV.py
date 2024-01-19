@@ -12,7 +12,76 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
-class Fenetre1(QWidget):
+PORT_BOARD = "COM"                     # for PC CPU
+BAUD_RATE =  115200
+TIME_OUT = 30
+                
+EMPTY    = ""
+BOARD    = "BOARD"
+
+
+
+
+BOARD_DETECTED = " board detected on "
+ARDUINO  = "Arduino"
+TEENSY   = "Teensy"
+NEW_LINE = "\n"
+COMMA    = ","
+ACQ_START  = "Acquisition Started"
+ACQ_END    = "Acquisition Ended "
+TRA_START  = "Tracing Started "
+TRA_END    = "Tracing Ended "
+INVITE = ">>"
+QUOTE  = '"'
+EQUAL  = '='
+UNDEFINED = "-"
+WARNING = [EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY]
+WARNING[0]  ="********************************************************************" 
+WARNING[1]  ="*   WARNING - You have reached the MAXIMUM number of acquisition   *" 
+WARNING[2]  ="*   WARNING -    You can't set up a new acquisition right now      *"
+WARNING[3]  ="*   WARNING -        Your FILES will be overwritten                *"
+WARNING[4]  ="*   WARNING -            Your DATA will be LOST                    *"
+WARNING[5]  ="*   WARNING - Consider CLOSING this program and OPENNING it again  *"
+WARNING[6]  ="*   WARNING -        The only available Command is TRA             *"
+WARNING[7]  ="********************************************************************" + self.NEW_LINE
+MAX_ACQ     = 16
+MAX_CYCLE   = 3
+NB_PARAM    = 5
+acq_time=""
+DELAY_01s = 0.1
+DELAY_1s  = 1
+CODE_STEP = 1
+
+QUANT_PWM           = 0.0200513
+OFFSET_PWM          = 128.
+QUANT_DAC_ARDUINO   = 5./4096.
+OFFSET_DAC_ARDUINO  = 2048
+QUANT_ADC_ARDUINO   = 5./4095
+OFFSET_ADC_ARDUINO  = 2048
+COEFF_CONV_ARDUINO  = 1.0
+CONV_PERIOD_ARDUINO = 1000.             # in order to convert in ms
+DELAY_STAB_ARDUINO  = 2.0
+
+QUANT_DAC_TEENSY    = 1./800       # extracted from calibration process
+OFFSET_DAC_TEENSY   = 2093           # extracted from calibration process
+QUANT_ADC_TEENSY    = 3.3/4095
+OFFSET_ADC_TEENSY   = 2045.0
+COEFF_CONV_TEENSY   = 1.51              # inverse of the output voltage divider
+CONV_PERIOD_TEENSY  = 1.0 * 1000000.    # in order to convert in micros and take care of the first stage gain
+DELAY_STAB_TEENSY   = 2.0
+
+R10k         = 10000.0
+RTIA_ARDUINO =  1000.0                   # to be change to the right value
+RTIA_TEENSY  =  100000.0
+KOHM         =  1000.0
+CODE_MAX_RTIA = 255
+CODE_MIN_RTIA =  12
+
+COEFF_mA     =          1000.0             # scale in mA
+COEFF_microA =       1000000.0             # scale in microA
+COEFF_nA     =    1000000000.0             # scale in nA
+COEFF_pA     = 1000000000000.0             # scale in pA
+class window1(QWidget):
         def __init__(self):# declaration du constructeur
                 #**************************
                 # declaration des atribue *
@@ -22,107 +91,7 @@ class Fenetre1(QWidget):
                 #self.PORT_TEENSY  = "/dev/cu.usbmodem6837991"
                 #self.PORT_BOARD = "/dev/cu.usbmodem"         # for MAC CPU
                 #self.PORT_BOARD="/dev/ttyACM"                # for linux
-                self.PORT_BOARD = "COM"                     # for PC CPU
-                self.BAUD_RATE =  115200
-                self.TIME_OUT = 30
                 
-                self.EMPTY    = ""
-                self.BOARD    = "BOARD"
-                #************************************************
-                self.ACQ      = "ACQ"
-                self.CMD_ACQ  ="  = Start Acquisition"
-                #************************************************
-                self.CMD      = "CMD"
-                self.CMD_CMD  = "  = Print Commands available"
-                #************************************************
-                self.FILE     = "FILE"
-                self.CMD_FILE = " = Set File index"
-                #************************************************
-                self.PAR      = "PAR"
-                self.CMD_PAR  = "  = Print Parameters"
-                #************************************************
-                self.TRA      = "TRA"
-                self.CMD_TRA  = "  = Plot the acquisition data"
-                #************************************************
-                self.RTIA     = "RTIA"
-                self.CMD_RTIA = " = Set RTIA value"
-                #************************************************
-                self.UNIT     = "UNIT"
-                self.CMD_UNIT = " = Set current unit value"
-                #************************************************
-                self.SET      = "SET"
-                self.DEF      = ""
-                #************************************************
-                self.EXIT     = "EXIT"
-                self.CMD_EXIT = " = Exit the script "
-                #************************************************
-                
-                self.CMD_KEY = {self.ACQ: self.CMD_ACQ, self.CMD: self.CMD_CMD, self.FILE: self.CMD_FILE, self.PAR: self.CMD_PAR, self.TRA: self.CMD_TRA, self.RTIA: self.CMD_RTIA, self.UNIT: self.CMD_UNIT, self.DEF: self.EMPTY, self.EXIT: self.CMD_EXIT}
-                self.CMD_AVA = {self.ACQ: self.CMD_ACQ, self.CMD: self.CMD_CMD, self.FILE: self.CMD_FILE, self.PAR: self.CMD_PAR, self.TRA: self.CMD_TRA, self.RTIA: self.CMD_RTIA, self.UNIT: self.CMD_UNIT, self.DEF: self.EMPTY, self.EXIT: self.CMD_EXIT}
-                self.CMD_AVA.pop(self.ACQ) # Command ACQ not available at start up
-                self.CMD_AVA.pop(self.TRA) # Command TRA not available at start up
-                #print(CMD_AVA)
-                
-                
-                self.BOARD_DETECTED = " board detected on "
-                self.ARDUINO  = "Arduino"
-                self.TEENSY   = "Teensy"
-                self.NEW_LINE = "\n"
-                self.COMMA    = ","
-                self.ACQ_START  = "Acquisition Started"
-                self.ACQ_END    = "Acquisition Ended "
-                self.TRA_START  = "Tracing Started "
-                self.TRA_END    = "Tracing Ended "
-                self.INVITE = ">>"
-                self.QUOTE  = '"'
-                self.EQUAL  = '='
-                self.UNDEFINED = "-"
-                self.WARNING = [self.EMPTY,self.EMPTY,self.EMPTY,self.EMPTY,self.EMPTY,self.EMPTY,self.EMPTY,self.EMPTY]
-                self.WARNING[0]  ="********************************************************************" 
-                self.WARNING[1]  ="*   WARNING - You have reached the MAXIMUM number of acquisition   *" 
-                self.WARNING[2]  ="*   WARNING -    You can't set up a new acquisition right now      *"
-                self.WARNING[3]  ="*   WARNING -        Your FILES will be overwritten                *"
-                self.WARNING[4]  ="*   WARNING -            Your DATA will be LOST                    *"
-                self.WARNING[5]  ="*   WARNING - Consider CLOSING this program and OPENNING it again  *"
-                self.WARNING[6]  ="*   WARNING -        The only available Command is TRA             *"
-                self.WARNING[7]  ="********************************************************************" + self.NEW_LINE
-                self.MAX_ACQ     = 16
-                self.MAX_CYCLE   = 3
-                self.NB_PARAM    = 5
-                self.acq_time=""
-                self.DELAY_01s = 0.1
-                self.DELAY_1s  = 1
-                self.CODE_STEP = 1
-                
-                self.QUANT_PWM           = 0.0200513
-                self.OFFSET_PWM          = 128.
-                self.QUANT_DAC_ARDUINO   = 5./4096.
-                self.OFFSET_DAC_ARDUINO  = 2048
-                self.QUANT_ADC_ARDUINO   = 5./4095
-                self.OFFSET_ADC_ARDUINO  = 2048
-                self.COEFF_CONV_ARDUINO  = 1.0
-                self.CONV_PERIOD_ARDUINO = 1000.             # in order to convert in ms
-                self.DELAY_STAB_ARDUINO  = 2.0
-                
-                self.QUANT_DAC_TEENSY    = 1./800       # extracted from calibration process
-                self.OFFSET_DAC_TEENSY   = 2093           # extracted from calibration process
-                self.QUANT_ADC_TEENSY    = 3.3/4095
-                self.OFFSET_ADC_TEENSY   = 2045.0
-                self.COEFF_CONV_TEENSY   = 1.51              # inverse of the output voltage divider
-                self.CONV_PERIOD_TEENSY  = 1.0 * 1000000.    # in order to convert in micros and take care of the first stage gain
-                self.DELAY_STAB_TEENSY   = 2.0
-                
-                self.R10k         = 10000.0
-                self.RTIA_ARDUINO =  1000.0                   # to be change to the right value
-                self.RTIA_TEENSY  =  100000.0
-                self.KOHM         =  1000.0
-                self.CODE_MAX_RTIA = 255
-                self.CODE_MIN_RTIA =  12
-                
-                self.COEFF_mA     =          1000.0             # scale in mA
-                self.COEFF_microA =       1000000.0             # scale in microA
-                self.COEFF_nA     =    1000000000.0             # scale in nA
-                self.COEFF_pA     = 1000000000000.0             # scale in pA
                 
                 self.resistorlabels = ["±2mA", "±.2mA", "±20 uA", "±2uA", "±.2uA", "±67uA", "±20nA", "±2nA"]
                 self.resistorvalues = [value*self.KOHM for value in [1, 10, 100, 1000, 10000, 30000, 100000, 1000000]]
@@ -211,18 +180,23 @@ class Fenetre1(QWidget):
                 self.lfilename = QLabel(text=" Enter the file name ( test is the default name )") # creation du qlabel
                 self.userfilename = QLineEdit() # creation de QlineEdit pour rentrer les information
                 
-                self.lpotential = QLabel(text=" Enter the potential in V") # creation du qlabel
-                self.userV = QLineEdit() # creation de QlineEdit pour rentrer les information
+                self.lpotential1 = QLabel(text=" Enter the first potential in V") # creation du qlabel
+                self.userV1 = QLineEdit() # creation de QlineEdit pour rentrer les information
                 
-                self.lscanrate = QLabel(text=" Enter scan rate in scan per min") # creation du qlabel
-                self.userscanrate = QLineEdit() # creation de QlineEdit pour rentrer les information
+                self.lpotential2 = QLabel(text=" Enter the second potential in V") # creation du qlabel
+                self.userV2 = QLineEdit() # creation de QlineEdit pour rentrer les information
                 
-                self.lrefreshrate = QLabel(text=" Enter refresh rate per min ") # creation du qlabel
-                self.userrefreshrate = QLineEdit() # creation de QlineEdit pour rentrer les information
+                self.lvoltagechangerate = QLabel(text=" Enter voltage change time in seconds") # creation du qlabel
+                self.voltagechangerate = QLineEdit() # creation de QlineEdit pour rentrer les information
                 
-                self.lscantime = QLabel(text=" Enter scan time") # creation du qlabel
-                self.usertime = QLineEdit() # creation de QlineEdit pour rentrer les information
+                self.lrefreshrate = QLabel(text=" Enter wait time in seconds") # creation du qlabel
+                self.downtime = QLineEdit() # creation de QlineEdit pour rentrer les information
+                
+                self.lscantime = QLabel(text=" Enter scan rate") # creation du qlabel
+                self.scanrate = QLineEdit() # creation de QlineEdit pour rentrer les information
 
+                self.lcycle = QLabel(text=" Enter cycle rate") # creation du qlabel
+                self.ncycles = QLineEdit() # creation de QlineEdit pour rentrer les information
 
 
                 self.figure = plt.Figure() # creation de la figure
@@ -234,7 +208,10 @@ class Fenetre1(QWidget):
                 self.bouton = QPushButton("Start")
                 self.bouton.clicked.connect(self.principal) # relier le boutton avec la fonction principal qui s'excute quand on clic sur le boutton
                 
-               # self.bouton.clicked.connect() # 
+                # création du bouton
+                self.stop = QPushButton("Stop")
+                self.stop.clicked.connect(self.stop_running)
+                #self.stop.clicked.connect(s) # relier le boutton avec la fonction principal qui s'excute quand on clic sur le boutton
                 
 
 
@@ -245,17 +222,21 @@ class Fenetre1(QWidget):
                 self.image.fill(Qt.white)
                 
                 topLayout = QVBoxLayout() # creation  du QVBoxLayout
-                topLayout.addWidget(self.lpotential) # ajouter le label6 a ce layout
-                topLayout.addWidget(self.lscanrate) # ajouter le label7 a ce layout
+                topLayout.addWidget(self.lpotential1) # ajouter le label6 a ce layout
+                topLayout.addWidget(self.lpotential2)
+                topLayout.addWidget(self.lvoltagechangerate) # ajouter le label7 a ce layout
                 topLayout.addWidget(self.lrefreshrate) # ajouter le label8 a ce layout
                 topLayout.addWidget(self.lscantime) # ajouter le label9 a ce layout
+                topLayout.addWidget(self.lcycle)
                 
                 topLayout1 = QVBoxLayout() # creation  du QVBoxLayout
-                topLayout1.addWidget(self.userV)  # ajouter le champ6 ( qLinEedit ) a ce layout
-                topLayout1.addWidget(self.userscanrate) # ajouter le champ7 ( qLinEedit ) a ce layout
-                topLayout1.addWidget(self.userrefreshrate) # ajouter le champ8 ( qLinEedit ) a ce layout
-                topLayout1.addWidget(self.usertime)
-              
+                topLayout1.addWidget(self.userV1) 
+                topLayout1.addWidget(self.userV2) # ajouter le champ6 ( qLinEedit ) a ce layout
+                topLayout1.addWidget(self.voltagechangerate) # ajouter le champ7 ( qLinEedit ) a ce layout
+                topLayout1.addWidget(self.downtime) # ajouter le champ8 ( qLinEedit ) a ce layout
+                topLayout1.addWidget(self.scanrate)
+                topLayout1.addWidget(self.ncycles)
+
                 topLayout4 = QVBoxLayout() # creation  du QVBoxLayout
                 topLayout4.addWidget(self.luserportnumber) # ajouter le label a ce layout
                 topLayout4.addWidget(self.lirange)
@@ -264,7 +245,7 @@ class Fenetre1(QWidget):
                 topLayout4.addWidget(self.lfilename) # ajouter le label5 a ce layout
                 
                 topLayout5 = QVBoxLayout() # creation  du QVBoxLayout
-                topLayout5.addWidget(self.userportnumber) # ajouter le champ ( qLinEedit ) a ce layout
+                topLayout5.addWidget(self.userportnumber) 
 
                 topLayout6 = QHBoxLayout()
                 for i, radioBtn in enumerate(self.radioButtons):
@@ -297,7 +278,7 @@ class Fenetre1(QWidget):
 
                 #☺layout.addWidget(self.bouton1)
                 self.setLayout(layout) # affiche le layout qui contient touts les layout
-                self.setWindowTitle("Method CV") # titre de la fenetre
+                self.setWindowTitle("Method OCV") # titre de la fenetre
         
         #************************************************************
         #* fonction qui s'excute lors de la fermeture de la fenetre *
@@ -344,7 +325,7 @@ class Fenetre1(QWidget):
                     #************************************************************************************************************************
                     #*on verifie si les champs obligatoire  son rempli on excute la fonction principal sinon on affiche un message d'erreur *
                     #************************************************************************************************************************
-                    if (self.userportnumber.text()!="" and self.userV.text()!="" and self.userscanrate.text()!="" and self.userrefreshrate.text()!=""  ):
+                    if (self.userportnumber.text()!="" and self.userV1.text()!="" and self.userV2.text()!="" and self.scanrate.text()!="" and self.voltagechangerate.text()!="" and self.downtime.text()!="" and self.ncycles.text()!="" ):
                         self.principal()
                     else:
                         # message d'erreur qui indique que les champs obligatoire ne sont par rempli
@@ -459,7 +440,18 @@ class Fenetre1(QWidget):
                         c_unit = self.COEFF_microA
         
         #end of set_unit function
-  
+        #*********************************
+        #* Function to set up UNIT       *
+        #********************************* 
+        def set_input_data(self,board):
+
+                V1 = str(int(round( self.userV1 /(self.QUANT_PWM ) + self.OFFSET_PWM)))   # compute the DAC code for V1
+                V2 = str(int(round( self.userV2 /(self.QUANT_PWM ) + self.OFFSET_PWM)))   # compute the DAC code for V2
+
+
+        
+        
+        #end of set_unit function
         #************************************
         #* Function to set up file          *
         #************************************ 
@@ -509,10 +501,10 @@ class Fenetre1(QWidget):
                 self.ax.set_xlim(min(self.flat_x_data), max(self.flat_x_data))        # set x limits
                 self.ax.set_ylim(min(self.flat_y_data), max(self.flat_y_data))        # set y limits    
                 
-                if self.userrefreshrate.text()>self.champ9.text():
-                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.champ9.text()+ " V, " + self.userrefreshrate.text() + " V]")            # Title
+                if self.downtime.text()>self.champ9.text():
+                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.champ9.text()+ " V, " + self.downtime.text() + " V]")            # Title
                 else  :
-                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.userrefreshrate.text()+ " V, " + self.champ9.text() + " V]")            # Title
+                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.downtime.text()+ " V, " + self.champ9.text() + " V]")            # Title
 
                 self.ax.set_xlabel("E (V)")
                 if (self.str_unit == self.EMPTY or self.str_unit == "uA"):
@@ -534,14 +526,14 @@ class Fenetre1(QWidget):
                                 #* Entering the modem's number  *
                                 #********************************
                                 
-                                modem_number = self.userportnumber.text()
-                                if (modem_number == self.EMPTY):
+                          modem_number = self.userportnumber.text()
+                          if (modem_number == self.EMPTY):
                                         
                                         
                                         self.port_board = self.PORT_TEENSY
                                         
                                       #  port_board = PORT_ARDUINO
-                                else:
+                          else:
                                         modem_number = str(modem_number)
                                         self.port_board = self.PORT_BOARD + modem_number
                                         self.liason=False
@@ -550,49 +542,44 @@ class Fenetre1(QWidget):
                                 #* Openning of the serial link  *
                                 #********************************
                                 
-                                self.Arduino_Serial = serial.Serial(self.port_board, self.BAUD_RATE, timeout=self.TIME_OUT)
-                                time.sleep(self.DELAY_1s) #give the connection a second to settle
-                                msg="OCV"
-                                message = msg.encode(self.UTF_8)
-                                self.Arduino_Serial.write(message)
-                                time.sleep(self.DELAY_1s)      
+                          self.Arduino_Serial = serial.Serial(self.port_board, self.BAUD_RATE, timeout=self.TIME_OUT)
+                          time.sleep(self.DELAY_1s) #give the connection a second to settle
+                          msg="OCV"
+                          message = msg.encode(self.UTF_8)
+                          self.Arduino_Serial.write(message)
+                          time.sleep(self.DELAY_1s)      
                                 #****************************************
                                 #* Board detection  & set up constants  *
                                 #****************************************
-                                self.board_detection()
-                                self.set_contants(board)
-                                
+                          self.board_detection()
+                          self.set_contants(board)
+                          self.set_rtia(board)
+                          self.set_cap(board)
+                          self.set_unit(board)
+                          self.set_input_data(board)
                                 #********************************
                                 #* RTIA set-up & UNIT           *
                                 #********************************
-                                self.set_rtia(board)
-                                self.set_cap(board)
-                                self.set_unit(board)
+                         
 
 
-                                transmit = f"{}" + self.COMMA +  + self.COMMA + str_vstop + self.COMMA+ str_vstop1 + self.COMMA + str_period + self.COMMA + f"{self.ritaindex}"+ self.COMMA + f"{self.capindex}"
-                                message = msg.encode(self.UTF_8)
-                                self.Arduino_Serial.write(message)
-
-                                )  # ajouter le champ6 ( qLinEedit ) a ce layout
-                topLayout1.addWidget(self.userscanrate) # ajouter le champ7 ( qLinEedit ) a ce layout
-                topLayout1.addWidget(self.userrefreshrate) # ajouter le champ8 ( qLinEedit ) a ce layout
-                topLayout1.addWidget(self.usertime)
-
-
-
-                                        
+                          transmit =  self.COMMA +  + self.COMMA +  + self.COMMA+ str_vstop1 + self.COMMA + str_period + self.COMMA + f"{self.ritaindex}"+ self.COMMA + f"{self.capindex}"
+                          message = msg.encode(self.UTF_8)
+                          self.Arduino_Serial.write(message)
+ 
+                         
                                 #********************************
                                 #* Printing of input message    *
                                 #********************************
 
-                                       
+        def stop_running(self)  
+                                     
                               
 
 if __name__ == '__main__':
         app = QApplication.instance() 
         if not app:
                 app = QApplication(sys.argv)
-        fen = Fenetre1()
+        fen = window1()
         fen.show()
         app.exec_()
