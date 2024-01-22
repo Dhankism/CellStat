@@ -81,6 +81,9 @@ COEFF_mA     =          1000.0             # scale in mA
 COEFF_microA =       1000000.0             # scale in microA
 COEFF_nA     =    1000000000.0             # scale in nA
 COEFF_pA     = 1000000000000.0             # scale in pA
+
+input=[UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED] #[portnumber, V1, V2, T1,T2,scanrate,ncycles,rita, cap]
+
 class window1(QWidget):
         def __init__(self):# declaration du constructeur
                 #**************************
@@ -123,11 +126,7 @@ class window1(QWidget):
                 self.nb_acq_cycle = [0,0,0,0]
                 self.gra_color =["b","g","r"]
                 
-                #****************************
-                #* Array for PARAMETERS     *
-                #****************************
-                self.params = [self.UNDEFINED,self.UNDEFINED,self.UNDEFINED,self.UNDEFINED,self.UNDEFINED,self.UNDEFINED,self.UNDEFINED]
-                self.param  = [[self.UNDEFINED,self.UNDEFINED,self.UNDEFINED,self.UNDEFINED,self.UNDEFINED] for  i in range(self.MAX_ACQ)]   # maximum 16 sets of parameters
+        
                 self.rtia_val=""
                 self.port_board=""
                 self.cmd_code = ""
@@ -401,6 +400,7 @@ class window1(QWidget):
                 if not   selected_indices:
                        print("no radio button selected defaulted to 100k")
                        self.rtia_val=self.resistorvalues[3]  # Index of "100k"
+                       self.ritaindex = 3
                 else:      
                         self.rtia_val = self.resistorvalues[ selected_indices[0]]
                         self.ritaindex = selected_indices[0]
@@ -444,10 +444,15 @@ class window1(QWidget):
         #* Function to set up UNIT       *
         #********************************* 
         def set_input_data(self,board):
-
-                V1 = str(int(round( self.userV1 /(self.QUANT_PWM ) + self.OFFSET_PWM)))   # compute the DAC code for V1
-                V2 = str(int(round( self.userV2 /(self.QUANT_PWM ) + self.OFFSET_PWM)))   # compute the DAC code for V2
-
+                input[0]= str(self.userportnumber.text())
+                input[1] = str(int(round( self.userV1 /(self.QUANT_PWM ) + self.OFFSET_PWM)))   # compute the DAC code for V1
+                input[2] = str(int(round( self.userV2 /(self.QUANT_PWM ) + self.OFFSET_PWM)))   # compute the DAC code for V2
+                input[3]=str(self.voltagechangerate.text())
+                input[4]=str(self.downtime.text())
+                input[5]=str(self.scanrate.text())
+                input[6]=str(self.ncycles.text())
+                input[7]=str( self.ritaindex )
+                input[8]=str( self.capindex )
 
         
         
@@ -543,6 +548,7 @@ class window1(QWidget):
                                 #********************************
                                 
                           self.Arduino_Serial = serial.Serial(self.port_board, self.BAUD_RATE, timeout=self.TIME_OUT)
+                          self.board_detection()
                           time.sleep(self.DELAY_1s) #give the connection a second to settle
                           msg="OCV"
                           message = msg.encode(self.UTF_8)
@@ -551,19 +557,15 @@ class window1(QWidget):
                                 #****************************************
                                 #* Board detection  & set up constants  *
                                 #****************************************
-                          self.board_detection()
+                         
                           self.set_contants(board)
                           self.set_rtia(board)
                           self.set_cap(board)
                           self.set_unit(board)
                           self.set_input_data(board)
-                                #********************************
-                                #* RTIA set-up & UNIT           *
-                                #********************************
-                         
 
 
-                          transmit =  self.COMMA +  + self.COMMA +  + self.COMMA+ str_vstop1 + self.COMMA + str_period + self.COMMA + f"{self.ritaindex}"+ self.COMMA + f"{self.capindex}"
+                          transmit = ','.join(input)
                           message = msg.encode(self.UTF_8)
                           self.Arduino_Serial.write(message)
  
