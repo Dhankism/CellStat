@@ -1,6 +1,6 @@
 
 
-import serial, time, math
+import serial, time, math, os
 import time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -557,7 +557,6 @@ class window1(QWidget):
                                 #****************************************
                                 #* Board detection  & set up constants  *
                                 #****************************************
-                         
                           self.set_contants(board)
                           self.set_rtia(board)
                           self.set_cap(board)
@@ -565,11 +564,26 @@ class window1(QWidget):
                           self.set_input_data(board)
 
 
+
+
+                          # Check if the folder already exists
+                          if not os.path.exists(self.userfilename):
+                          # If it doesn't exist, create it
+                          os.makedirs(self.userfilename)
+                          print(f"Folder '{self.userfilename}' created.")
+                          else:
+                          # If it exists, find a new name by adding a number
+                          i = 1
+                          while os.path.exists(f'{self.userfilename}',"_",f'{i}'):
+                          i += 1
+                          os.makedirs(f'{self.userfilename}',"_",f'{i}')
+                          print(f"Folder '{f'{self.userfilename}',"_",f'{i}'}' created.")
+ 
                           transmit = ','.join(input)
                           message = msg.encode(self.UTF_8)
                           self.Arduino_Serial.write(message)
- 
-                         
+                          #setup file
+  												#
                                 #********************************
                                 #* Printing of input message    *
                                 #********************************
