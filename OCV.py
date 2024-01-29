@@ -82,7 +82,7 @@ COEFF_microA =       1000000.0             # scale in microA
 COEFF_nA     =    1000000000.0             # scale in nA
 COEFF_pA     = 1000000000000.0             # scale in pA
 
-input=[UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED] #[portnumber, V1, V2, T1,T2,scanrate,ncycles,rita, cap]
+
 
 class window1(QWidget):
         def __init__(self):# declaration du constructeur
@@ -95,12 +95,17 @@ class window1(QWidget):
                 #self.PORT_BOARD = "/dev/cu.usbmodem"         # for MAC CPU
                 #self.PORT_BOARD="/dev/ttyACM"                # for linux
                 
-                
+                self.input=[UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED] #[ V1, V2, T1,T2,scanrate,ncycles,rita, cap]
+								self.folder_name="NAN"
+								self.cycle_i=0
+								self.folder_i=0
+								
                 self.resistorlabels = ["±2mA", "±.2mA", "±20 uA", "±2uA", "±.2uA", "±67uA", "±20nA", "±2nA"]
                 self.resistorvalues = [value*self.KOHM for value in [1, 10, 100, 1000, 10000, 30000, 100000, 1000000]]
                 self.Capacitorlabels = ["2p", "20p", "50p", "100p", "200p", "1n", "50n", "100n"]
                 self.capindex=0
                 self.ritaindex=0
+								self.n
                 #***********************
                 #* File name to modify *
                 #***********************
@@ -444,48 +449,22 @@ class window1(QWidget):
         #* Function to set up UNIT       *
         #********************************* 
         def set_input_data(self,board):
-                input[0]= str(self.userportnumber.text())
-                input[1] = str(int(round( self.userV1 /(self.QUANT_PWM ) + self.OFFSET_PWM)))   # compute the DAC code for V1
-                input[2] = str(int(round( self.userV2 /(self.QUANT_PWM ) + self.OFFSET_PWM)))   # compute the DAC code for V2
-                input[3]=str(self.voltagechangerate.text())
-                input[4]=str(self.downtime.text())
-                input[5]=str(self.scanrate.text())
-                input[6]=str(self.ncycles.text())
-                input[7]=str( self.ritaindex )
-                input[8]=str( self.capindex )
+								global pwm_count=0,V1_dac=0,V2_dac=0
+                V1_dac =int(round( self.userV1 /(self.QUANT_PWM ) + self.OFFSET_PWM))
+								V2_dac=int(round( self.userV2 /(self.QUANT_PWM ) + self.OFFSET_PWM))
+								input[0] = str(V1_dac)   # compute the DAC code for V1
+                input[1] = str(V2_dac)   # compute the DAC code for V2
+                input[2]=str(round(self.voltagechangerate.text()/self.scanrate.text())
+                input[3]=str(self.downtime.text())
+                input[4]=str(self.scanrate.text())
+                input[5]=str(self.ncycles.text())
+                input[6]=str( self.ritaindex )
+                input[7]=str( self.capindex )
+								global pwm_count,V1_dac,V2_dac
 
         
         
         #end of set_unit function
-        #************************************
-        #* Function to set up file          *
-        #************************************ 
-        def set_up_file(self,board):
-                global file_name, file
-                if (board == self.ARDUINO):
-                        file_name = self.FILE_NAME_ARDUINO
-                else:
-                        file_name = self.FILE_NAME_TEENSY  
-                self.sauvegarde=self.fichier
-                self.fichier=self.userfilename.text()
-                self.index_file +=1
-                if self.fichier == self.EMPTY :     
-                    file_name = "test" + str(self.index_file ) + self.FILE_EXTENT 
-                    file = open( file_name, self.WRITE_MODE,encoding = self.UTF_8)   # create a new file
-                    print(file_name)
-                else:
-                    if self.fichier==self.sauvegarde:
-                        file_name = self.fichier + str(self.index_file ) + self.FILE_EXTENT 
-                        file = open( file_name, self.WRITE_MODE,encoding = self.UTF_8)   # create a new file
-                        print(file_name)
-                    else:
-                        self.index_file=0
-                        file_name = self.fichier + self.FILE_EXTENT 
-                        file = open( self.fichier+self.FILE_EXTENT, self.WRITE_MODE,encoding = self.UTF_8)   # create a new file
-                        print(file_name)
-                time.sleep(self.DELAY_01s)
-                
-        #end of set_up_file function 
         
   
                                     
@@ -530,13 +509,10 @@ class window1(QWidget):
                                 #********************************
                                 #* Entering the modem's number  *
                                 #********************************
-                                
                           modem_number = self.userportnumber.text()
                           if (modem_number == self.EMPTY):
                                         
-                                        
                                         self.port_board = self.PORT_TEENSY
-                                        
                                       #  port_board = PORT_ARDUINO
                           else:
                                         modem_number = str(modem_number)
@@ -548,7 +524,7 @@ class window1(QWidget):
                                 #********************************
                                 
                           self.Arduino_Serial = serial.Serial(self.port_board, self.BAUD_RATE, timeout=self.TIME_OUT)
-                          self.board_detection()
+                     
                           time.sleep(self.DELAY_1s) #give the connection a second to settle
                           msg="OCV"
                           message = msg.encode(self.UTF_8)
@@ -557,36 +533,70 @@ class window1(QWidget):
                                 #****************************************
                                 #* Board detection  & set up constants  *
                                 #****************************************
+                          self.board_detection()
                           self.set_contants(board)
                           self.set_rtia(board)
                           self.set_cap(board)
                           self.set_unit(board)
                           self.set_input_data(board)
 
-
-
-
                           # Check if the folder already exists
+													global folder_name
                           if not os.path.exists(self.userfilename):
                           # If it doesn't exist, create it
-                          os.makedirs(self.userfilename)
-                          print(f"Folder '{self.userfilename}' created.")
+                            os.makedirs(self.userfilename)
+                            folder_name =f"{self.userfilename}"
+                            print(f"Folder '{self.userfilename}' created.")
                           else:
                           # If it exists, find a new name by adding a number
-                          i = 1
-                          while os.path.exists(f'{self.userfilename}',"_",f'{i}'):
-                          i += 1
-                          os.makedirs(f'{self.userfilename}',"_",f'{i}')
-                          print(f"Folder '{f'{self.userfilename}',"_",f'{i}'}' created.")
- 
-                          transmit = ','.join(input)
+                            i = 1
+                            while os.path.exists(f"{self.userfilename}_{i}"):
+                            i += 1
+                            os.makedirs(f'{self.userfilename}_{i}')
+														folder_name =f'{self.userfilename}_{i}'
+                          print(f'{folder_name}_created.')
+ 													
+                          transmit = ','.join(input) 
+                          transmit = msg.encode(self.UTF_8)
+                          self.Arduino_Serial.write( transmit)
+							  					time.sleep(self.DELAY_1s) 
+													print(f'{transmit}')
+													#tell it ot run the commands
+													message="ACQ"
                           message = msg.encode(self.UTF_8)
                           self.Arduino_Serial.write(message)
-                          #setup file
-  												#
-                                #********************************
-                                #* Printing of input message    *
-                                #********************************
+													print('acq_start')
+							  					time.sleep(self.DELAY_1s) 
+													#get the results and put it into a file 
+													sleep.()
+													data_array = []
+
+  												 try:
+        										line_count = 0
+       											 while True:
+       										     line = arduino.readline().decode('utf-8').strip()
+      									    	  if not line:
+              									  break  # Exit the loop if there's nothing left to read
+
+      										      # Split each line into three segments based on commas
+       											    segments = line.split(',')
+																segment[0]=
+																segment[1]=
+     										       # Append 
+     										 	    	data_array.append((line_count, segments))
+     											      line_count += 1
+
+ 												   file_path = os.path.join(folder_name, "output.txt")
+
+    											with open(file_path, 'w') as file:
+    									    for index, segments in data_array:
+     							     		  file.write(f"Line {index}: {segments}\n")
+
+													#
+													#put into a graph
+													#set command to repeat ntimes
+						 							
+
 
         def stop_running(self)  
                                      
