@@ -96,16 +96,16 @@ class window1(QWidget):
                 #self.PORT_BOARD="/dev/ttyACM"                # for linux
                 
                 self.input=[UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED] #[ V1, V2, T1,T2,scanrate,ncycles,rita, cap]
-								self.folder_name="NAN"
-								self.cycle_i=0
-								self.folder_i=0
+		self.folder_name="NAN"
+		self.cycle_i=0
+		self.folder_i=0
 								
                 self.resistorlabels = ["±2mA", "±.2mA", "±20 uA", "±2uA", "±.2uA", "±67uA", "±20nA", "±2nA"]
                 self.resistorvalues = [value*self.KOHM for value in [1, 10, 100, 1000, 10000, 30000, 100000, 1000000]]
                 self.Capacitorlabels = ["2p", "20p", "50p", "100p", "200p", "1n", "50n", "100n"]
                 self.capindex=0
                 self.ritaindex=0
-								self.n
+		self.num_pwm =6
                 #***********************
                 #* File name to modify *
                 #***********************
@@ -449,18 +449,19 @@ class window1(QWidget):
         #* Function to set up UNIT       *
         #********************************* 
         def set_input_data(self,board):
-								global pwm_count=0,V1_dac=0,V2_dac=0
+		global pwm_count=0,V1_dac=0,V2_dac=0, aqctime=0
                 V1_dac =int(round( self.userV1 /(self.QUANT_PWM ) + self.OFFSET_PWM))
-								V2_dac=int(round( self.userV2 /(self.QUANT_PWM ) + self.OFFSET_PWM))
-								input[0] = str(V1_dac)   # compute the DAC code for V1
+		V2_dac=int(round( self.userV2 /(self.QUANT_PWM ) + self.OFFSET_PWM))
+		pwn_count=round(self.voltagechangerate.text()/self.scanrate.text())
+		aqctime=self.voltagechangerate.text()*self.num_pwm 
+		input[0] = str(V1_dac)   # compute the DAC code for V1
                 input[1] = str(V2_dac)   # compute the DAC code for V2
-                input[2]=str(round(self.voltagechangerate.text()/self.scanrate.text())
+                input[2]=str(pwm_count)
                 input[3]=str(self.downtime.text())
                 input[4]=str(self.scanrate.text())
                 input[5]=str(self.ncycles.text())
                 input[6]=str( self.ritaindex )
                 input[7]=str( self.capindex )
-								global pwm_count,V1_dac,V2_dac
 
         
         
@@ -541,7 +542,7 @@ class window1(QWidget):
                           self.set_input_data(board)
 
                           # Check if the folder already exists
-													global folder_name
+			  global folder_name
                           if not os.path.exists(self.userfilename):
                           # If it doesn't exist, create it
                             os.makedirs(self.userfilename)
@@ -553,48 +554,76 @@ class window1(QWidget):
                             while os.path.exists(f"{self.userfilename}_{i}"):
                             i += 1
                             os.makedirs(f'{self.userfilename}_{i}')
-														folder_name =f'{self.userfilename}_{i}'
+			    folder_name =f'{self.userfilename}_{i}'
                           print(f'{folder_name}_created.')
  													
                           transmit = ','.join(input) 
                           transmit = msg.encode(self.UTF_8)
                           self.Arduino_Serial.write( transmit)
-							  					time.sleep(self.DELAY_1s) 
-													print(f'{transmit}')
-													#tell it ot run the commands
-													message="ACQ"
+			  time.sleep(self.DELAY_1s) 
+			  print(f'{transmit}')
+			  #tell it ot run the commands
+			  message="ACQ"
                           message = msg.encode(self.UTF_8)
                           self.Arduino_Serial.write(message)
-													print('acq_start')
-							  					time.sleep(self.DELAY_1s) 
-													#get the results and put it into a file 
-													sleep.()
-													data_array = []
+			  print('acq_start')
+			  time.sleep(self.DELAY_1s) 
+			  #get the results and put it into a file 
+			  sleep.(aqctime+2)# wait this much time for the rady read be outputed
+			  data_array = []
 
-  												 try:
-        										line_count = 0
-       											 while True:
-       										     line = arduino.readline().decode('utf-8').strip()
-      									    	  if not line:
-              									  break  # Exit the loop if there's nothing left to read
+  			   try:
+        	           line_count = 0
+			   time=0
+       				while True:
+       				 line = arduino.readline().decode('utf-8').strip()
+      			         if not line:
+              			   break  # Exit the loop if there's nothing left to read
 
-      										      # Split each line into three segments based on commas
-       											    segments = line.split(',')
-																segment[0]=
-																segment[1]=
-     										       # Append 
-     										 	    	data_array.append((line_count, segments))
-     											      line_count += 1
+      			        # Split each line into three segments based on commas
+       				 segments = line.split(',')
+				 val_v = (int(segment[0]) - offset_DAC) * gain * quant_DAC
+                                 val_c = (int(segment[1]) - offset_ADC) * quant_ADC * coeff_conv * (c_unit/self.rtia_val)
+				 time =time+1/self.scanrate.text()
+     				 # Append 
+     				 data_array.append((line_count, val_v,val_c,time))
+     				 line_count += 1
 
- 												   file_path = os.path.join(folder_name, "output.txt")
+ 			   file_path = os.path.join(folder_name, f'{self.userfilename})
 
-    											with open(file_path, 'w') as file:
-    									    for index, segments in data_array:
-     							     		  file.write(f"Line {index}: {segments}\n")
+    			   with open(file_path, 'w') as file:
+    			   for index, segments in data_array:
+     			   file.write(f"Line {index}: {segments}\n")
 
-													#
-													#put into a graph
-													#set command to repeat ntimes
+			   #
+			   #put into a graph and save
+ 			   self.ax.clear()
+                        for i_cycle in range(self.nb_cycle):
+                        self.x = self.x_data[index_acq][i_cycle]
+                        self.y = self.y_data[index_acq][ i_cycle]
+                        self.ax.plot(self.x, self.y, self.gra_color[i_cycle],label = "Cycle" + str(i_cycle + 1)) 
+                self.flat_x_data = [item for sublist in self.x_data[index_acq] for item in sublist]
+                self.flat_y_data = [item for sublist in self.y_data[index_acq] for item in sublist]
+
+                self.ax.set_xlim(min(self.flat_x_data), max(self.flat_x_data))        # set x limits
+                self.ax.set_ylim(min(self.flat_y_data), max(self.flat_y_data))        # set y limits    
+                
+                if self.downtime.text()>self.champ9.text():
+                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.champ9.text()+ " V, " + self.downtime.text() + " V]")            # Title
+                else  :
+                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.downtime.text()+ " V, " + self.champ9.text() + " V]")            # Title
+
+                self.ax.set_xlabel("E (V)")
+                if (self.str_unit == self.EMPTY or self.str_unit == "uA"):
+                            self.str_unit = "µA"
+                self.ax.set_ylabel("I (" + self.str_unit + ")")            # y labels
+                
+                self.ax.grid(True)
+                self.ax.legend()
+                # refresh canvas
+                self.canvas.draw()
+                
+			  #set command to repeat ntimes
 						 							
 
 
