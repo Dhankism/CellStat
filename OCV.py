@@ -99,6 +99,10 @@ class window1(QWidget):
                 self.folder_name="NAN"
                 self.cycle_i=0
                 self.folder_i=0
+                self.pwm_count = 0
+                self.V1_dac=0
+                self.V2_dac=0 
+                self.aqctime=0
 								
                 self.resistorlabels = ["±2mA", "±.2mA", "±20 uA", "±2uA", "±.2uA", "±67uA", "±20nA", "±2nA"]
                 self.resistorvalues = [value*self.KOHM for value in [1, 10, 100, 1000, 10000, 30000, 100000, 1000000]]
@@ -449,21 +453,22 @@ class window1(QWidget):
         #* Function to set up UNIT       *
         #********************************* 
         def set_input_data(self,board):
-                pwm_count = 0, V1_dac=0,V2_dac=0, aqctime=0
-                V1_dac =int(round( self.userV1 /(self.QUANT_PWM ) + self.OFFSET_PWM))
-                V2_dac=int(round( self.userV2 /(self.QUANT_PWM ) + self.OFFSET_PWM))
+                
+                self.V1_dac =int(round( self.userV1 /(self.QUANT_PWM ) + self.OFFSET_PWM))
+                self.V2_dac=int(round( self.userV2 /(self.QUANT_PWM ) + self.OFFSET_PWM))
 
-                pwm_count=round(self.voltagechangerate.text()/self.scanrate.text())
+                self.pwm_count=round(self.voltagechangerate.text()/self.scanrate.text())
 
-                aqctime=round(self.voltagechangerate.text()*self.num_pwm) 
-                input[0] = str(V1_dac)   # compute the DAC code for V1
-                input[1] = str(V2_dac)   # compute the DAC code for V2
-                input[2]=str(pwm_count)
+                self.aqctime=round(self.voltagechangerate.text()*self.num_pwm) 
+                input[0] = str(self.V1_dac)   # compute the DAC code for V1
+                input[1] = str(self.V2_dac)   # compute the DAC code for V2
+                input[2]=str(self.pwm_count)
                 input[3]=str(self.downtime.text())
                 input[4]=str(self.scanrate.text())
                 input[5]=str(self.ncycles.text())
                 input[6]=str( self.ritaindex )
                 input[7]=str( self.capindex )
+                self.aqctime=round(self.voltagechangerate.text()*self.num_pwm*6) 
 
         
         
@@ -573,7 +578,7 @@ class window1(QWidget):
                 print('acq_start')
                 time.sleep(self.DELAY_1s) 
 		#get the results and put it into a file 
-                time.sleep(aqctime+2)# wait this much time for the rady read be outputed
+                time.sleep(self.aqctime+2)# wait this much time for the rady read be outputed
                 data_array = []
 
                 try:
@@ -618,7 +623,7 @@ class window1(QWidget):
                 else  :
                     self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.downtime.text()+ " V, " + self.champ9.text() + " V]")            # Title
 
-                self.ax.set_xlabel("E (V)")
+                self.ax.set_xlabel("time")
                 if (self.str_unit == self.EMPTY or self.str_unit == "uA"):
                             self.str_unit = "µA"
                 self.ax.set_ylabel("I (" + self.str_unit + ")")            # y labels
