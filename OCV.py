@@ -305,7 +305,7 @@ class window1(QWidget):
                  msg="fin"
                  message = msg.encode(self.UTF_8)
                  self.Arduino_Serial.write(message)
-                 time.sleep(self.DELAY_1s) 
+                 time.sleep(DELAY_1s) 
                  self.Arduino_Serial.close() # fermer la liaison serie entre l'arduino et le pc
             else:
                 event.ignore()
@@ -375,26 +375,26 @@ class window1(QWidget):
         #********************************* 
         def set_contants(self,board):
                 global quant_DAC, offset_DAC, quant_ADC, offset_ADC,coeff_conv,conv_period, rtia, delay_stab, gain
-                if ( board == self.ARDUINO):
-                        quant_DAC   = self.QUANT_DAC_ARDUINO
-                        offset_DAC  = self.OFFSET_DAC_ARDUINO
-                        quant_ADC   = self.QUANT_ADC_ARDUINO
-                        offset_ADC  = self.OFFSET_ADC_ARDUINO
-                        coeff_conv  = self.COEFF_CONV_ARDUINO
-                        conv_period = self.CONV_PERIOD_ARDUINO
-                        rtia = self.RTIA_ARDUINO
-                        delay_stab  = self.DELAY_STAB_ARDUINO
+                if ( board == ARDUINO):
+                        quant_DAC   = QUANT_DAC_ARDUINO
+                        offset_DAC  = OFFSET_DAC_ARDUINO
+                        quant_ADC   = QUANT_ADC_ARDUINO
+                        offset_ADC  = OFFSET_ADC_ARDUINO
+                        coeff_conv  = COEFF_CONV_ARDUINO
+                        conv_period = CONV_PERIOD_ARDUINO
+                        rtia = RTIA_ARDUINO
+                        delay_stab  = DELAY_STAB_ARDUINO
                         gain = +1.0
                 
                 elif (board == self.TEENSY):
-                        quant_DAC   = self.QUANT_DAC_TEENSY
-                        offset_DAC  = self.OFFSET_DAC_TEENSY
-                        quant_ADC   = self.QUANT_ADC_TEENSY
-                        offset_ADC  = self.OFFSET_ADC_TEENSY 
-                        coeff_conv  = self.COEFF_CONV_TEENSY
-                        conv_period = self.CONV_PERIOD_TEENSY
-                        rtia = self.RTIA_TEENSY
-                        delay_stab  = self.DELAY_STAB_TEENSY
+                        quant_DAC   = QUANT_DAC_TEENSY
+                        offset_DAC  = OFFSET_DAC_TEENSY
+                        quant_ADC   = QUANT_ADC_TEENSY
+                        offset_ADC  = OFFSET_ADC_TEENSY 
+                        coeff_conv  = COEFF_CONV_TEENSY
+                        conv_period = CONV_PERIOD_TEENSY
+                        rtia = RTIA_TEENSY
+                        delay_stab  = DELAY_STAB_TEENSY
                         gain = -1.0
         #end of set_constants function
                         
@@ -533,11 +533,11 @@ class window1(QWidget):
                                 
                 self.Arduino_Serial = serial.Serial(self.port_board, self.BAUD_RATE, timeout=self.TIME_OUT)
                      
-                time.sleep(self.DELAY_1s) #give the connection a second to settle
+                time.sleep(DELAY_1s) #give the connection a second to settle
                 msg="OCV"
                 message = msg.encode(self.UTF_8)
                 self.Arduino_Serial.write(message)
-                time.sleep(self.DELAY_1s)      
+                time.sleep(DELAY_1s)      
                                 #****************************************
                                 #* Board detection  & set up constants  *
                                 #****************************************
@@ -568,7 +568,7 @@ class window1(QWidget):
                 transmit = ','.join(input) 
                 transmit = msg.encode(self.UTF_8)
                 self.Arduino_Serial.write(transmit)
-                time.sleep(self.DELAY_1s) 
+                time.sleep(DELAY_1s) 
 
                 print(f'{transmit}')
 		#tell it to run the commands
@@ -576,7 +576,7 @@ class window1(QWidget):
                 message = msg.encode(self.UTF_8)
                 self.Arduino_Serial.write(message)
                 print('acq_start')
-                time.sleep(self.DELAY_1s) 
+                
 		#get the results and put it into a file 
                 time.sleep(self.aqctime+2)# wait this much time for the rady read be outputed
                 data_array = []
@@ -596,7 +596,7 @@ class window1(QWidget):
                                 val_c = (int(segment[1]) - offset_ADC) * quant_ADC * coeff_conv * (c_unit/self.rtia_val)
                                 scantime =scantime+1/self.scanrate.text()
      				 # Append 
-                                data_array.append((line_count, val_v,val_c,time))
+                                data_array.append((line_count, val_v, val_c, scantime))
                                 line_count += 1
 
                                 file_path = os.path.join(folder_name, f'{self.userfilename}')
@@ -607,21 +607,20 @@ class window1(QWidget):
 
 			   #
 			   #put into a graph and save
+                except:
+                        
                 self.ax.clear()
-                for i_cycle in range(self.nb_cycle):
-                        self.x = self.x_data[index_acq][i_cycle]
-                        self.y = self.y_data[index_acq][ i_cycle]
-                        self.ax.plot(self.x, self.y, self.gra_color[i_cycle],label = "Cycle" + str(i_cycle + 1)) 
-                        self.flat_x_data = [item for sublist in self.x_data[index_acq] for item in sublist]
-                        self.flat_y_data = [item for sublist in self.y_data[index_acq] for item in sublist]
+               
+                self.ax.plot(data_array[scantime], data_array[val_c], ) 
 
-                self.ax.set_xlim(min(self.flat_x_data), max(self.flat_x_data))        # set x limits
-                self.ax.set_ylim(min(self.flat_y_data), max(self.flat_y_data))        # set y limits    
+
+                self.ax.set_xlim(min(data_array[scantime]) , max(data_array[scantime]) )       # set x limits
+                self.ax.set_ylim(min(data_array[val_c]), max(data_array[val_c]))        # set y limits    
                 
-                if self.downtime.text()>self.champ9.text():
-                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.champ9.text()+ " V, " + self.downtime.text() + " V]")            # Title
-                else  :
-                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.downtime.text()+ " V, " + self.champ9.text() + " V]")            # Title
+                     # Title
+                self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.champ9.text()+ " V, " + self.downtime.text() + " V]")            # Title
+              
+                        
 
                 self.ax.set_xlabel("time")
                 if (self.str_unit == self.EMPTY or self.str_unit == "uA"):
@@ -632,6 +631,8 @@ class window1(QWidget):
                 self.ax.legend()
                 # refresh canvas
                 self.canvas.draw()
+
+                self.figure.savefig(folder_name)
                 
 			  #set command to repeat ntimes
 						 							
