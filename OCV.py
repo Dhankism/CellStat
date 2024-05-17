@@ -43,7 +43,7 @@ WARNING[3]  ="*   WARNING -        Your FILES will be overwritten               
 WARNING[4]  ="*   WARNING -            Your DATA will be LOST                    *"
 WARNING[5]  ="*   WARNING - Consider CLOSING this program and OPENNING it again  *"
 WARNING[6]  ="*   WARNING -        The only available Command is TRA             *"
-WARNING[7]  ="********************************************************************" + self.NEW_LINE
+WARNING[7]  ="********************************************************************" 
 MAX_ACQ     = 16
 MAX_CYCLE   = 3
 NB_PARAM    = 5
@@ -95,7 +95,7 @@ class window1(QWidget):
                 #self.PORT_BOARD = "/dev/cu.usbmodem"         # for MAC CPU
                 #self.PORT_BOARD="/dev/ttyACM"                # for linux
                 
-                self.input=[UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED] #[ V1, V2, T1,T2,scanrate,ncycles,rita, cap]
+                self.input=[UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED,UNDEFINED] #[ V1, V2, T1,T2,scanrate,ncycles,rita, cap]
                 self.folder_name="NAN"
                 self.cycle_i=0
                 self.folder_i=0
@@ -105,11 +105,13 @@ class window1(QWidget):
                 self.aqctime=0
 								
                 self.resistorlabels = ["±2mA", "±.2mA", "±20 uA", "±2uA", "±.2uA", "±67uA", "±20nA", "±2nA"]
-                self.resistorvalues = [value*self.KOHM for value in [1, 10, 100, 1000, 10000, 30000, 100000, 1000000]]
+                self.resistorvalues = [value*KOHM for value in [1, 10, 100, 1000, 10000, 30000, 100000, 1000000]]
                 self.Capacitorlabels = ["2p", "20p", "50p", "100p", "200p", "1n", "50n", "100n"]
                 self.capindex=0
                 self.ritaindex=0
                 self.num_pwm =6
+                self.flag=False
+                
                 #***********************
                 #* File name to modify *
                 #***********************
@@ -125,8 +127,8 @@ class window1(QWidget):
                 #****************************
                 self.x = []
                 self.y = []
-                self.x_data = [[[] for j in range(self.MAX_CYCLE)] for i in range(self.MAX_ACQ)]
-                self.y_data = [[[] for j in range(self.MAX_CYCLE)] for i in range(self.MAX_ACQ)]
+                self.x_data = []
+                self.y_data = []
                      
                 #****************************
                 #* Array cycle and colors 
@@ -280,7 +282,8 @@ class window1(QWidget):
                 layout.addLayout(topLayout,  1, 2) # ajouter le QVBoxLayout a la position (1,3) 
                 layout.addLayout(topLayout1, 1, 3) # ajouter le QVBoxLayout a la position (1,3) 
 
-                layout.addWidget(self.bouton,2,0,1,3) # ajouter le boutton a la position (2,0) et prend toute la largeur
+                layout.addWidget(self.bouton,2,0,1,3)
+                layout.addWidget(self.stop,2,2,1,3) # ajouter le boutton a la position (2,0) et prend toute la largeur
                 layout.addWidget(self.button,2,3,1,3)
                 layout.addWidget(self.canvas,3,0,1,4) # ajouter le canvas la position (3,0) et prend toute la largeur
 
@@ -333,6 +336,7 @@ class window1(QWidget):
                     #************************************************************************************************************************
                     #*on verifie si les champs obligatoire  son rempli on excute la fonction principal sinon on affiche un message d'erreur *
                     #************************************************************************************************************************
+
                     if (self.userportnumber.text()!="" and self.userV1.text()!="" and self.userV2.text()!="" and self.scanrate.text()!="" and self.voltagechangerate.text()!="" and self.downtime.text()!="" and self.ncycles.text()!="" ):
                         self.principal()
                     else:
@@ -340,7 +344,7 @@ class window1(QWidget):
                         msg = QMessageBox()
                         msg.setIcon(QMessageBox.Critical)
                         msg.setText("Error")
-                        msg.setInformativeText('please enter at least the link port, the number of cycles, the start potential, the two insertion potentials, and the scan speed')
+                        msg.setInformativeText('please enter at least the link port, the Voltage values, the scan rate, the the voltage change rate, and the cyc amount')
                         msg.setWindowTitle("Error")             
                         msg.exec_()
                         
@@ -353,17 +357,17 @@ class window1(QWidget):
             # on entre dans la boucle on envoi un message Board et on lire les information de l'arduino si on reçoit
             # "teensy" c'est a dire le nom de la carte on sort de la boucle
             while (ctrl_while):
-                    message = self.BOARD.encode(self.UTF_8)
+                    message = BOARD.encode(self.UTF_8)
                     self.Arduino_Serial.write(message)
                     while self.Arduino_Serial.in_waiting == 0:
                            pass
                     received = self.Arduino_Serial.readline()[:-2]  # reads line from Arduino/Teensy and strips out NL + CR
                     received_utf8 = received.decode(self.UTF_8)
                     print (received_utf8)
-                    if (received_utf8 == self.ARDUINO or received_utf8 == self.TEENSY):                                       
+                    if (received_utf8 == ARDUINO or received_utf8 == TEENSY):                                       
                             ctrl_while = False      # to break the loop
                             board =  received_utf8  
-                            print (self.NEW_LINE + board + self.BOARD_DETECTED + self.QUOTE + self.port_board + self.QUOTE + self.NEW_LINE)
+                            print (NEW_LINE + board + BOARD_DETECTED + QUOTE + self.port_board + QUOTE + NEW_LINE)
                             self.index_acq   = 0
                             index_param = 0
         
@@ -386,7 +390,7 @@ class window1(QWidget):
                         delay_stab  = DELAY_STAB_ARDUINO
                         gain = +1.0
                 
-                elif (board == self.TEENSY):
+                elif (board == TEENSY):
                         quant_DAC   = QUANT_DAC_TEENSY
                         offset_DAC  = OFFSET_DAC_TEENSY
                         quant_ADC   = QUANT_ADC_TEENSY
@@ -436,17 +440,17 @@ class window1(QWidget):
                 global  c_unit
                 self.str_unit = self.usercurrentunit.text()
                 #si on entre la l'unité du courant on la stock quand c_unit sinon on stock la valeur par default
-                if (self.str_unit == self.EMPTY or self.str_unit == "uA"):
-                        c_unit = self.COEFF_microA
+                if (self.str_unit == EMPTY or self.str_unit == "uA"):
+                        c_unit = COEFF_microA
                 elif (self.str_unit == "mA"):
-                        c_unit = self.COEFF_mA
+                        c_unit = COEFF_mA
                 elif (self.str_unit == "nA"):
-                        c_unit = self.COEFF_nA
+                        c_unit = COEFF_nA
                 elif (self.str_unit == "pA"):
-                        c_unit = self.COEFF_pA
+                        c_unit = COEFF_pA
                 else:
                         print("unit not found used uA as default")
-                        c_unit = self.COEFF_microA
+                        c_unit = COEFF_microA
         
         #end of set_unit function
         #*********************************
@@ -454,21 +458,21 @@ class window1(QWidget):
         #********************************* 
         def set_input_data(self,board):
                 
-                self.V1_dac =int(round( self.userV1 /(self.QUANT_PWM ) + self.OFFSET_PWM))
-                self.V2_dac=int(round( self.userV2 /(self.QUANT_PWM ) + self.OFFSET_PWM))
+                self.V1_dac =int(round( float(self.userV1.text()) /(quant_DAC * gain) + offset_DAC))
+                self.V2_dac=int(round( float(self.userV2.text()) /(quant_DAC * gain) + offset_DAC))
 
-                self.pwm_count=round(self.voltagechangerate.text()/self.scanrate.text())
+                self.pwm_count=int(round(float(self.voltagechangerate.text())*float(self.scanrate.text())))
 
-                self.aqctime=round(self.voltagechangerate.text()*self.num_pwm) 
-                input[0] = str(self.V1_dac)   # compute the DAC code for V1
-                input[1] = str(self.V2_dac)   # compute the DAC code for V2
-                input[2]=str(self.pwm_count)
-                input[3]=str(self.downtime.text())
-                input[4]=str(self.scanrate.text())
-                input[5]=str(self.ncycles.text())
-                input[6]=str( self.ritaindex )
-                input[7]=str( self.capindex )
-                self.aqctime=round(self.voltagechangerate.text()*self.num_pwm*6) 
+                self.aqctime=round(float(self.voltagechangerate.text())*self.num_pwm) 
+                self.input[0] = str(self.V1_dac)   # compute the DAC code for V1
+                self.input[1] = str(self.V2_dac)   # compute the DAC code for V2
+                self.input[2] = str(self.pwm_count)
+                self.input[3] = str(self.downtime.text())
+                self.input[4] = str(round((1/float(self.scanrate.text()))*1000))
+                self.input[5] = str(self.ncycles.text())
+                self.input[6] = str( self.ritaindex )
+                self.input[7] = str( self.capindex )
+                self.aqctime=round(float(self.voltagechangerate.text())*self.num_pwm) 
 
         
         
@@ -478,60 +482,142 @@ class window1(QWidget):
                                     
         #print(param[index_acq])
                                                            
-        #********************************
-        #* Function to plot cycle       *
-        #********************************
-        def plot_cycle (self,index_acq):
-                self.ax.clear()
-                for i_cycle in range(self.nb_cycle):
-                        self.x = self.x_data[index_acq][i_cycle]
-                        self.y = self.y_data[index_acq][ i_cycle]
-                        self.ax.plot(self.x, self.y, self.gra_color[i_cycle],label = "Cycle" + str(i_cycle + 1)) 
-                self.flat_x_data = [item for sublist in self.x_data[index_acq] for item in sublist]
-                self.flat_y_data = [item for sublist in self.y_data[index_acq] for item in sublist]
+      
+              
+        def run_data(self):
 
-                self.ax.set_xlim(min(self.flat_x_data), max(self.flat_x_data))        # set x limits
-                self.ax.set_ylim(min(self.flat_y_data), max(self.flat_y_data))        # set y limits    
+                if (self.cycle_i>=int(self.ncycles.text())):
+                        self.timer.stop
+                        self.flag=False
+                        self.Arduino_Serial.close() 
+                        print("done")
+                        return
+
+
+
+
+                #send the settings to the teensy 
+                msg = ','.join(self.input) 
+                transmit = msg.encode(self.UTF_8)
+                self.Arduino_Serial.write(transmit)
+                time.sleep(DELAY_1s) 
+
+                print(f'{transmit}')
+		#tell the teensey  to run the commands
+                msg="ACQ"
+                message = msg.encode(self.UTF_8)
+                self.Arduino_Serial.write(message)
+                print('acq_start')
+                print( "The acquisition will take roughly : ", (f"{self.aqctime:.2f}"), " seconds")
+		
+                time.sleep(self.aqctime+2)# wait this much time for the rady read be outputed
+                data_array = []
+
                 
-                if self.downtime.text()>self.champ9.text():
-                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.champ9.text()+ " V, " + self.downtime.text() + " V]")            # Title
-                else  :
-                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.downtime.text()+ " V, " + self.champ9.text() + " V]")            # Title
+                line_count = 0
+                scantime=0
+                xdata = []
+                ydata = []
+                start_time = time.time()
+                while True:
+                        line = self.Arduino_Serial.readline().decode('utf-8').strip()
+                        
+                        print(line) 
+                        if (line_count>=self.pwm_count*6):
+                                break  # Exit the loop if there's nothing left to read
+                        if not line:
+                               continue
 
-                self.ax.set_xlabel("E (V)")
-                if (self.str_unit == self.EMPTY or self.str_unit == "uA"):
+      			# Split each line into three segments based on commas
+
+                        val_c = float((int(line) - offset_ADC) * quant_ADC * coeff_conv * (c_unit/self.rtia_val))
+                        scantime =scantime+(1/float(self.scanrate.text()))
+
+                        xdata.append(float(scantime))
+                        ydata.append(float(val_c))
+                        print(line_count, (f"{val_c:.6f}"), (f"{scantime:.6f}"),self.pwm_count*6)	 # Append 
+                        data_array.append((line_count, (f"{val_c:.6f}"), (f"{scantime:.6f}")))
+                        line_count += 1
+
+                       
+
+
+                #get the results and put it into a file 
+                directtext= str(f'{self.userfilename.text()}') + "_" + str(self.cycle_i) + ".txt"
+                file_path = os.path.join(folder_name,directtext)
+                
+                with open( file_path , 'w') as file:
+                        for index, segments in enumerate(data_array):
+                                file.write((f" {segments}\n"))
+                                print((f"Line {index}: {segments}\n"))
+			   
+                
+                file.close
+
+
+                end_time= time.time() 
+                duration = end_time - start_time
+                print("Loop duration:", duration, " seconds")
+
+
+                #********************************
+                #* Function to plot cycle       *
+                #********************************
+                self.ax.clear()
+                self.ax.plot(xdata, ydata ) 
+
+
+                self.ax.set_xlim(min(xdata) , max(xdata) )       # set x limits
+                self.ax.set_ylim(min(ydata), max(ydata))        # set y limits    
+                
+                     # Title
+                self.ax.set_title("Acquisition for "+ self.userV1.text()+" V to " + self.userV2.text() + " V " + "for "+self.voltagechangerate.text()+ "s")            # Title
+              
+                self.ax.set_xlabel("time (s)")
+                if (self.str_unit == EMPTY or self.str_unit == "uA"):
                             self.str_unit = "µA"
                 self.ax.set_ylabel("I (" + self.str_unit + ")")            # y labels
                 
                 self.ax.grid(True)
-                self.ax.legend()
+                
                 # refresh canvas
                 self.canvas.draw()
+
+                #save figure to the folder
+                directtext= str(f'{self.userfilename.text()}') + "_" + str(self.cycle_i) 
+                file_path = os.path.join(folder_name,directtext)
+                self.figure.savefig(file_path)
+
+               
+               
+                self.cycle_i= self.cycle_i + 1
                 
-              
-                
+                       
                 
                 
                                       
         def principal(self):
-                                #********************************
-                                #* Entering the modem's number  *
-                                #********************************
+                #********************************
+                #* Entering the modem's number  *
+                #********************************
                 modem_number = self.userportnumber.text()
-                if (modem_number == self.EMPTY):
+                if (modem_number == EMPTY):
                                         
-                        self.port_board = self.PORT_TEENSY
+                        self.port_board = 3 #this is here because sometime i forget to add the com number 
                                       #  port_board = PORT_ARDUINO
                 else:
                         modem_number = str(modem_number)
-                        self.port_board = self.PORT_BOARD + modem_number
+                        self.port_board = PORT_BOARD + modem_number
                         self.liason=False
                                        
-                                #********************************
-                                #* Openning of the serial link  *
-                                #********************************
+                               
+                               
+                               
+                #********************************
+                #* Openning of the serial link  *
+                #********************************
                                 
-                self.Arduino_Serial = serial.Serial(self.port_board, self.BAUD_RATE, timeout=self.TIME_OUT)
+                self.Arduino_Serial = serial.Serial(self.port_board, BAUD_RATE, timeout=TIME_OUT)
                      
                 time.sleep(DELAY_1s) #give the connection a second to settle
                 msg="OCV"
@@ -550,95 +636,40 @@ class window1(QWidget):
 
                           # Check if the folder already exists
                 global folder_name
-                if not os.path.exists(self.userfilename):
+                if not os.path.exists(self.userfilename.text()):
                           # If it doesn't exist, create it
-                        os.makedirs(self.userfilename)
-                        folder_name =f"{self.userfilename}"
-                        print(f"Folder '{self.userfilename}' created.")
+                        os.makedirs(self.userfilename.text())
+                        folder_name =f"{self.userfilename.text()}"
                 else:
                           # If it exists, find a new name by adding a number
                         i = 1
-                        while os.path.exists(f"{self.userfilename}_{i}"):
+                        while os.path.exists(f"{self.userfilename.text()}_{i}"):
                                 i += 1
-                                os.makedirs(f'{self.userfilename}_{i}')
-                                folder_name =f'{self.userfilename}_{i}'
+                        os.makedirs(f'{self.userfilename.text()}_{i}')
+                        folder_name =f'{self.userfilename.text()}_{i}'
 
-                print(f'{folder_name}_created.')
- 													
-                transmit = ','.join(input) 
-                transmit = msg.encode(self.UTF_8)
-                self.Arduino_Serial.write(transmit)
-                time.sleep(DELAY_1s) 
-
-                print(f'{transmit}')
-		#tell it to run the commands
-                message="ACQ"
-                message = msg.encode(self.UTF_8)
-                self.Arduino_Serial.write(message)
-                print('acq_start')
-                
-		#get the results and put it into a file 
-                time.sleep(self.aqctime+2)# wait this much time for the rady read be outputed
-                data_array = []
-
-                try:
-                        line_count = 0
-                      
-                        scantime=0
-                        while True:
-                                line = arduino.readline().decode('utf-8').strip()
-                                if not line:
-                                        break  # Exit the loop if there's nothing left to read
-
-      			        # Split each line into three segments based on commas
-                                segment = line.split(',')
-                                val_v = (int(segment[0]) - offset_DAC) * gain * quant_DAC
-                                val_c = (int(segment[1]) - offset_ADC) * quant_ADC * coeff_conv * (c_unit/self.rtia_val)
-                                scantime =scantime+1/self.scanrate.text()
-     				 # Append 
-                                data_array.append((line_count, val_v, val_c, scantime))
-                                line_count += 1
-
-                                file_path = os.path.join(folder_name, f'{self.userfilename}')
-
-                        with open( file_path , 'w') as file:
-                                for index, segments in data_array:
-                                        file.write(f"Line {index}: {segments}\n")
-
-			   #
-			   #put into a graph and save
-                except:
-                        
-                self.ax.clear()
-               
-                self.ax.plot(data_array[scantime], data_array[val_c], ) 
+                print(f'Folder_{folder_name}_created.')
+                folder_name = os.path.abspath(folder_name)#make it a directory 
 
 
-                self.ax.set_xlim(min(data_array[scantime]) , max(data_array[scantime]) )       # set x limits
-                self.ax.set_ylim(min(data_array[val_c]), max(data_array[val_c]))        # set y limits    
-                
-                     # Title
-                self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.champ9.text()+ " V, " + self.downtime.text() + " V]")            # Title
-              
-                        
+                self.cycle_i=0											
+                self.run_data()# run a test now
 
-                self.ax.set_xlabel("time")
-                if (self.str_unit == self.EMPTY or self.str_unit == "uA"):
-                            self.str_unit = "µA"
-                self.ax.set_ylabel("I (" + self.str_unit + ")")            # y labels
-                
-                self.ax.grid(True)
-                self.ax.legend()
-                # refresh canvas
-                self.canvas.draw()
-
-                self.figure.savefig(folder_name)
-                
+                self.timer = QTimer(self)# keep ruing until all cycles are done done
+                self.timer.timeout.connect(self.run_data)
+                self.timer.start(1000*int(self.downtime.text()))
+                self.flag=True
 			  #set command to repeat ntimes
 						 							
 
 
-       # def stop_running(self)  
+        def stop_running(self):
+        
+                self.timer.stop
+                self.flag=False
+
+
+
                                      
                               
 

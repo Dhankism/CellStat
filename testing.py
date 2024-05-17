@@ -1,69 +1,35 @@
-import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QTextEdit
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QRadioButton, QLabel, QPushButton
 
-class WorkerThread(QThread):
-    finished = pyqtSignal(object)
 
-    def __init__(self, inputs):
-        super().__init__()
-        self.inputs = inputs
-
-    def run(self):
-        # Your long-running code with array processing goes here
-        result = [2 * x for x in self.inputs]
-        if not self.isInterruptionRequested():
-            self.finished.emit(result)
-
-class MainWindow(QWidget):
+class RadioExample(QWidget):
     def __init__(self):
         super().__init__()
-
-        self.init_ui()
-
-    def init_ui(self):
-        self.setWindowTitle('Stop Button Example')
+        print("hello world")
+        self.radio_buttons = []  # List to store radio buttons
+        self.label = QLabel("Selected Radio Buttons:")
+        self.start_button = QPushButton("Start")
+        self.start_button.clicked.connect(self.print_selected_radio_buttons)
 
         layout = QVBoxLayout()
 
-        self.start_button = QPushButton('Start Process', self)
-        self.start_button.clicked.connect(self.start_process)
+        # Create and add radio buttons to the layout
+        radio_labels = ["1k", "10k", "100k", "1M", "10M", "30M", "100M", "1G"]
+        for label in radio_labels:
+            radio_btn = QRadioButton(label)
+            self.radio_buttons.append(radio_btn)
+            layout.addWidget(radio_btn)
+
         layout.addWidget(self.start_button)
-
-        self.stop_button = QPushButton('Stop Process', self)
-        self.stop_button.clicked.connect(self.stop_process)
-        layout.addWidget(self.stop_button)
-        self.stop_button.setEnabled(False)
-
-        self.result_text = QTextEdit(self)
-        self.result_text.setReadOnly(True)
-        layout.addWidget(self.result_text)
-
+        layout.addWidget(self.label)
         self.setLayout(layout)
+        self.setWindowTitle("Radio Button Example")
 
-        self.worker_thread = None
+    def print_selected_radio_buttons(self):
+        selected_buttons = [radio_btn.text() for radio_btn in self.radio_buttons if radio_btn.isChecked()]
+        self.label.setText(f"Selected Radio Buttons: {', '.join(selected_buttons)}")
 
-    def start_process(self):
-        self.start_button.setEnabled(False)
-        self.stop_button.setEnabled(True)
 
-        inputs = [1, 2, 3, 4, 5]  # Replace with your actual input array
-        self.worker_thread = WorkerThread(inputs)
-        self.worker_thread.finished.connect(self.process_finished)
-        self.worker_thread.start()
-
-    def stop_process(self):
-        if self.worker_thread:
-            self.worker_thread.requestInterruption()
-            self.worker_thread.wait()
-
-    def process_finished(self, result):
-        self.result_text.setPlainText(f"Result: {result}")
-        self.start_button.setEnabled(True)
-        self.stop_button.setEnabled(False)
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
+app = QApplication([])
+widget = RadioExample()
+widget.show()
+app.exec_()

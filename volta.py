@@ -23,8 +23,8 @@ class Fenetre1(QWidget):
                 #self.PORT_BOARD = "/dev/cu.usbmodem"         # for MAC CPU
                 #self.PORT_BOARD="/dev/ttyACM"                # for linux
                 self.PORT_BOARD = "COM"                     # for PC CPU
-                self.BAUD_RATE =  115200
-                self.TIME_OUT = 30
+                self.BAUD_RATE =  9600
+                self.TIME_OUT = 5
                 
                 self.EMPTY    = ""
                 self.BOARD    = "BOARD"
@@ -104,11 +104,11 @@ class Fenetre1(QWidget):
                 self.CONV_PERIOD_ARDUINO = 1000.             # in order to convert in ms
                 self.DELAY_STAB_ARDUINO  = 2.0
                 
-                self.QUANT_DAC_TEENSY    = 1./800       # extracted from calibration process
+                self.QUANT_DAC_TEENSY    = 1./800      # extracted from calibration process
                 self.OFFSET_DAC_TEENSY   = 2093           # extracted from calibration process
                 self.QUANT_ADC_TEENSY    = 3.3/4095
                 self.OFFSET_ADC_TEENSY   = 2045.0
-                self.COEFF_CONV_TEENSY   = 1.51              # inverse of the output voltage divider
+                self.COEFF_CONV_TEENSY   = 5/3.3              # inverse of the output voltage divider
                 self.CONV_PERIOD_TEENSY  = 1.0 * 1000000.    # in order to convert in micros and take care of the first stage gain
                 self.DELAY_STAB_TEENSY   = 2.0
                 
@@ -124,7 +124,7 @@ class Fenetre1(QWidget):
                 self.COEFF_nA     =    1000000000.0             # scale in nA
                 self.COEFF_pA     = 1000000000000.0             # scale in pA
                 
-                self.resistorlabels = ["±2mA", "±.2mA", "±20 uA", "±2uA", "±.2uA", "±67uA", "±20nA", "±2nA"]
+                self.resistorlabels = ["±2.5mA", "±.25mA", "±25uA", "±2.5uA", "±.25uA", "±72uA", "±25nA", "±2.5nA"]
                 self.resistorvalues = [value*self.KOHM for value in [1, 10, 100, 1000, 10000, 30000, 100000, 1000000]]
                 self.Capacitorlabels = ["2p", "20p", "50p", "100p", "200p", "1n", "50n", "100n"]
                 self.capindex=0
@@ -430,6 +430,7 @@ class Fenetre1(QWidget):
                 if not   selected_indices:
                        print("no radio button selected defaulted to 100k")
                        self.rtia_val=self.resistorvalues[3]  # Index of "100k"
+                       self.ritaindex = selected_indices[3]
                 else:      
                         self.rtia_val = self.resistorvalues[ selected_indices[0]]
                         self.ritaindex = selected_indices[0]
@@ -491,22 +492,8 @@ class Fenetre1(QWidget):
         #**************************************** 
         def set_acq_size(self,board):
                         global  nb_acq_tot
-                        if (board == self.ARDUINO):
-                                nb_acq_half_cycle = code_vstop - code_vstart
-                                if (self.nb_cycle == 1):
-                                        self.nb_acq_cycle[0] = (2 * nb_acq_half_cycle) + 1
-                                        nb_acq_tot = self.nb_acq_cycle[0]
-                                if (self.nb_cycle == 2):
-                                        self.nb_acq_cycle[0] = (2 * nb_acq_half_cycle) 
-                                        self.nb_acq_cycle[1] = self.nb_acq_cycle[0] + 1
-                                        nb_acq_tot = self.nb_acq_cycle[0] + self.nb_acq_cycle[1] 
-                                if (self.nb_cycle == 3):
-                                        self.nb_acq_cycle[0] = (2 * nb_acq_half_cycle)
-                                        self.nb_acq_cycle[1] = self.nb_acq_cycle[0]
-                                        self.nb_acq_cycle[2] = self.nb_acq_cycle[0] + 1
-                                        nb_acq_tot = self.nb_acq_cycle[0] + self.nb_acq_cycle[1] + self.nb_acq_cycle[2]
                         if (board == self.TEENSY):
-                                nb_acq_half_cycle =  code_vstart - code_vstop
+                                nb_acq_half_cycle =  abs(code_vstart - code_vstop)
                                 nb_acq_half_cycle1 =  abs(code_vstop1 - code_vstop)
                                 nb_acq_half_cycle2 =  abs(code_vstop1 - code_vstart)
                                 if ( nb_acq_half_cycle < 0):
@@ -533,15 +520,11 @@ class Fenetre1(QWidget):
         #***************************************
         def set_acq_value(self,board):
                 global code_vstart, code_vstop,code_vstop1
-                if ( board == self.ARDUINO ):
-                        period = round(conv_period * self.QUANT_PWM/srate)           # compute the period according to srate
-                        str_vstart = str(int(round( vstart/(self.QUANT_PWM ) + self.OFFSET_PWM)))   # compute the DAC code for Vstart
-                        str_vstop  = str(int(round(  vstop/(self.QUANT_PWM ) + self.OFFSET_PWM)))   # compute the DAC code for Vstop
-                else:
-                        period = round(conv_period * quant_DAC/srate)           # compute the period according to srate
-                        str_vstart = str(int(round( vstart/(quant_DAC * gain) + offset_DAC)))   # compute the DAC code for Vstart
-                        str_vstop  = str(int(round(  vstop/(quant_DAC * gain) + offset_DAC)))   # compute the DAC code for Vstop
-                        str_vstop1  = str(int(round(  vstop1/(quant_DAC * gain) + offset_DAC)))   # compute the DAC code for Vstop
+               
+                period = int(round(conv_period * quant_DAC/srate))           # compute the period according to srate
+                str_vstart = str(int(round( vstart/(quant_DAC * gain) + offset_DAC)))   # compute the DAC code for Vstart
+                str_vstop  = str(int(round(  vstop/(quant_DAC * gain) + offset_DAC)))   # compute the DAC code for Vstop
+                str_vstop1  = str(int(round(  vstop1/(quant_DAC * gain) + offset_DAC)))   # compute the DAC code for Vstop
                 str_period = str(period)       
                 transmit = str_cycle + self.COMMA + str_vstart + self.COMMA + str_vstop + self.COMMA+ str_vstop1 + self.COMMA + str_period + self.COMMA + f"{self.ritaindex}"+ self.COMMA + f"{self.capindex}"
                 message = transmit.encode(self.UTF_8)
@@ -559,10 +542,7 @@ class Fenetre1(QWidget):
         #************************************ 
         def set_up_file(self,board):
                 global file_name, file
-                if (board == self.ARDUINO):
-                        file_name = self.FILE_NAME_ARDUINO
-                else:
-                        file_name = self.FILE_NAME_TEENSY  
+                file_name = self.FILE_NAME_TEENSY  
                 self.sauvegarde=self.fichier
                 self.fichier=self.champ5.text()
                 self.index_file +=1
@@ -593,7 +573,7 @@ class Fenetre1(QWidget):
                 global  index_param
                 i_acq = 0
                 ctrl_while = True
-                time.sleep(self.acq_time - 1) # to avoid a long time out for the serial link
+                time.sleep(self.acq_time + 10 ) # to avoid a long time out for the serial link
         
                 while (ctrl_while):
                         # reads line from Arduino and 
@@ -633,6 +613,8 @@ class Fenetre1(QWidget):
                                 
                                 if (i_acq == nb_acq_tot):
                                         ctrl_while = False
+                        else:
+                                print("cant find data ")
                 index_param += 1
                 self.index_acq   += 1
                 file.flush()            # Don't forget to flush before closing the file
@@ -707,9 +689,9 @@ class Fenetre1(QWidget):
                 self.ax.set_ylim(min(self.flat_y_data), max(self.flat_y_data))        # set y limits    
                 
                 if self.champ8.text()>self.champ9.text():
-                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.champ9.text()+ " V, " + self.champ8.text() + " V]")            # Title
+                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.champ9.text()+ " V, " + self.champ8.text() + " V]"+ "")            # Title
                 else  :
-                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.champ8.text()+ " V, " + self.champ9.text() + " V]")            # Title
+                    self.ax.set_title("Acquisition " + str(self.index_acq) +"\n" + "Cycles with a scan rate of " + self.champ10.text() + " V/s \n Range["+ self.champ8.text()+ " V, " + self.champ9.text() + " V]"+ "")            # Title
 
                 self.ax.set_xlabel("E (V)")
                 if (self.str_unit == self.EMPTY or self.str_unit == "uA"):
@@ -740,7 +722,7 @@ class Fenetre1(QWidget):
                              msg.setWindowTitle('Quit')
 
                              msg.exec_()
-                         elif (float(self.champ7.text())>2.5 or float(self.champ7.text())<=-2.5) or (float(self.champ8.text())>2.5 or float(self.champ8.text())<=-2.5) or (float(self.champ9.text())>2.5 or float(self.champ9.text())<=-2.5) :
+                         elif (float(self.champ7.text())>2.50 or float(self.champ7.text())<=-2.50) or (float(self.champ8.text())>2.5 or float(self.champ8.text())<=-2.5) or (float(self.champ9.text())>2.5 or float(self.champ9.text())<=-2.5) :
                              # message d'erreur la valeur du potentiel min et max
                              msg = QMessageBox()
                              msg.setIcon(QMessageBox.Critical)
@@ -799,7 +781,7 @@ class Fenetre1(QWidget):
                                 #********************************
                                 #* Printing of input message    *
                                 #********************************
-                                print ("Enter Parameters like 2,-1.25,1.25,0.5 then ACQ to start acquisition and TRA to graph the data \n")
+                              #  print ("Enter Parameters like 2,-1.25,1.25,0.5 then ACQ to start acquisition and TRA to graph the data \n")
                                 i=0       
                                 #********************************
                                 #* Infinite loop                *
@@ -828,7 +810,7 @@ class Fenetre1(QWidget):
                                                 self.params = [name.strip() for name in received.split(self.COMMA)]
                                                 self.set_acq_limits(self.params)
                                                 #print(f_cycle, vstart, vstop, srate)                                                     
-                                                self.acq_time = (2.0 * f_cycle * (abs(vstart - vstop) + abs(vstop-vstop1)+abs(vstop1-vstart))/srate) + delay_stab # add the delay to stabilize vstart
+                                                self.acq_time = ( f_cycle * (abs(vstart - vstop) + abs(vstop-vstop1)+abs(vstop1-vstart))/srate) + delay_stab # add the delay to stabilize vstart
                                                 print( "The acquisition will take roughly : ", (f"{self.acq_time:.2f}"), " seconds")              
                                                 self.set_acq_value(board)
                                                 time.sleep(10*self.DELAY_01s)
