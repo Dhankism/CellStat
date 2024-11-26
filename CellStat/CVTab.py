@@ -1,5 +1,6 @@
 # CVTab.py
 from multiprocessing import Process
+from operator import index
 import matplotlib.pyplot as plt
 import time
 from PyQt5.QtWidgets import *
@@ -15,6 +16,8 @@ from cailbration import *
 
 CodeRunningFlag=False
 PortNumber=3
+BAUD_RATE = 115200
+TIMEOUT = 3
 
 class CVTab(QWidget):
     def __init__(self):
@@ -60,7 +63,7 @@ class CVTab(QWidget):
         self.RangeGroup = QButtonGroup()
         self.RangeList = QHBoxLayout()
 
-        for i in CurrentRange:
+        for i in CurrentRange:# taken from the cailbarion file
             Btn = QRadioButton(i)
             self.RangeGroup.addButton(Btn)
             self.RangeList .addWidget(Btn)
@@ -71,7 +74,7 @@ class CVTab(QWidget):
         self.CapList = QHBoxLayout()
 
 
-        for i in CapacitorLabels :
+        for i in CapacitorLabels :# taken from the cailbarion file
             Btn = QRadioButton(i)
             self.CapGroup.addButton(Btn)
             self.CapList.addWidget(Btn)
@@ -126,11 +129,91 @@ class CVTab(QWidget):
         self.setLayout(layout)
 
 
-
+    # Function to run the CV process and to check the inputs
     def Run_CMD(self):
+
+
+        i= [i for i, radio_btn in enumerate(self.RangeGroup.buttons()) if radio_btn.isChecked()]
+
+
+        if not i[0]:
+            error_dialog = QMessageBox()
+            error_dialog.setIcon(QMessageBox.Critical)
+            error_dialog.setText("Please select a current range.")
+            error_dialog.setWindowTitle("Input Error")
+            error_dialog.exec_()
+            return
+        RITA=int(ResistorValues[i[0]])
+        print(RITA)
+
+
+        cycnum = int(self.I_NumCycles.text())
+        startvolt = float(self.I_StartVoltage.text())
+        firstvolt = float(self.I_FirstVoltage.text())
+        secondvolt = float(self.I_SecondVoltage.text())
+        scanrate = float(self.I_ScanRate.text())
+        resistorval = float(RITA)
+        filename = self.I_FileName.text()
+
+   
+        if cycnum <= 0 or cycnum > 100:
+            error_dialog = QMessageBox()
+            error_dialog.setIcon(QMessageBox.Critical)
+            error_dialog.setText("Number of cycles must be between 1 and 100")
+            error_dialog.setWindowTitle("Input Error")
+            error_dialog.exec_()
+            return
+
+        if startvolt < -2.5 or startvolt > 2.5 or firstvolt < -2.5 or firstvolt > 2.5 or secondvolt < -2.5 or secondvolt > 2.5:
+            error_dialog = QMessageBox()
+            error_dialog.setIcon(QMessageBox.Critical)
+            error_dialog.setText("Start potential must be between -2.5 and +2.5 V")
+            error_dialog.setWindowTitle("Input Error")
+            error_dialog.exec_()
+            return
+
+        if scanrate <= 0.00001 or scanrate > 100:
+            error_dialog = QMessageBox()
+            error_dialog.setIcon(QMessageBox.Critical)
+            error_dialog.setText("Scan rate must be between 0.00001 and 100 V/s")
+            error_dialog.setWindowTitle("Input Error")
+            error_dialog.exec_()
+            return
+        
+        # Check if current range and capacitor range buttons are selected
+        current_range_selected = self.current_range_button_group.checkedButton()
+        capacitor_range_selected = self.capacitor_range_button_group.checkedButton()
+
+
+        if not current_range_selected:
+            error_dialog = QMessageBox()
+            error_dialog.setIcon(QMessageBox.Critical)
+            error_dialog.setText("Please select a current range.")
+            error_dialog.setWindowTitle("Input Error")
+            error_dialog.exec_()
+            return
+
+        if not capacitor_range_selected:
+            error_dialog = QMessageBox()
+            error_dialog.setIcon(QMessageBox.Critical)
+            error_dialog.setText("Please select a capacitor range.")
+            error_dialog.setWindowTitle("Input Error")
+            error_dialog.exec_()
+            return
+
+
+        print("Running CV with the following parameters:")
+        print(f"Number of cycles: {cycnum}")
+        print(f"Start potential: {startvolt}")
+        print(f"First inversion potential: {firstvolt}")
+        print(f"Second inversion potential: {secondvolt}")
+        print(f"Scan rate: {scanrate}")
+        print(f"Resistor value: {resistorval}")
+        print(f"Filename: {filename}")
+
         # Only start if there's no active process
         if self.process is None or not self.process.is_alive():
-            self.process = Process(target=long_running_task)
+            self.process = Process(target=execute_CV)
             self.process.start()
 
     def Stop_CMD(self):
@@ -142,9 +225,12 @@ class CVTab(QWidget):
             print("Task terminated")
 
 
-def long_running_task():
-    """A long-running task that runs for 20 seconds."""
+def execute_CV( ):
+    
     for i in range(20):
         time.sleep(1)  # Simulating a long task (20 seconds in total)
         print(f"Running... {i + 1} seconds")  # This will show in the console
     print("Task completed")
+
+
+
