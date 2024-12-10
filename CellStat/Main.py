@@ -3,13 +3,18 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget
 from CVTab import CVTab
 from PulseTab import PulseTab
+from ping import *
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()  # Ensure the QMainWindow superclass is initialized
-
+        global port
         self.setWindowTitle("CellStat")
         self.setGeometry(100, 100, 1000, 1200)
+
+        # Find all ports with matching VID
+        port= "com" + str(ping_by_vid())
 
         # Create QTabWidget and set up tabs
         self.tabs = QTabWidget()

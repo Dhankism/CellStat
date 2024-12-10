@@ -1,7 +1,9 @@
 # CVTab.py
 from multiprocessing import Process
 from operator import index
+from socket import CAPI
 import matplotlib.pyplot as plt
+import numpy as np
 import time
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -131,89 +133,107 @@ class CVTab(QWidget):
 
     # Function to run the CV process and to check the inputs
     def Run_CMD(self):
+        try:
+          
+            #check if the input is empty
+            if self.I_NumCycles.text()=='' or self.I_StartVoltage.text()=='' or self.I_FirstVoltage.text()=='' or self.I_SecondVoltage.text()=='' or self.I_ScanRate.text()=='' or self.I_FileName.text()=='':
+                error_dialog = QMessageBox()
+                error_dialog.setIcon(QMessageBox.Critical)
+                error_dialog.setText("Please fill in all the fields.")
+                error_dialog.setWindowTitle("Input Error")
+                error_dialog.exec_()
+            #check if buttons are selected
+            i= [i for i, radio_btn in enumerate(self.RangeGroup.buttons()) if radio_btn.isChecked()]
+            k= [k for k, radio_btn in enumerate(self.CapGroup.buttons()) if radio_btn.isChecked()]
+            self.Rindex=i[0]
+            self.Cindex=k[0]
+            if not i[0]:
+                error_dialog = QMessageBox()
+                error_dialog.setIcon(QMessageBox.Critical)
+                error_dialog.setText("Please select a current range.")
+                error_dialog.setWindowTitle("Input Error")
+                error_dialog.exec_()
+                
+            
+            if not k[0]:
+                error_dialog = QMessageBox()
+                error_dialog.setIcon(QMessageBox.Critical)
+                error_dialog.setText("Please select a capacitor range.")
+                error_dialog.setWindowTitle("Input Error")
+                error_dialog.exec_()
+                
+            
+        
+            self.cycnum =        int(self.I_NumCycles.text())
+            self.startvolt =     float(self.I_StartVoltage.text())
+            self.firstvolt =     float(self.I_FirstVoltage.text())
+            self.secondvolt =    float(self.I_SecondVoltage.text())
+            self.scanrate =      float(self.I_ScanRate.text())
+            self.resistorval =   int(ResistorValues[self.Rindex]) 
+            self.CAPVal =        int(CapacitorValues[self.Cindex])
+            self.filename =      self.I_FileName.text()
 
+    
+            if self.cycnum <= 0 or self.cycnum > 100:
+                error_dialog = QMessageBox()
+                error_dialog.setIcon(QMessageBox.Critical)
+                error_dialog.setText("Number of cycles must be between 1 and 100")
+                error_dialog.setWindowTitle("Input Error")
+                error_dialog.exec_()
+                return
 
-        i= [i for i, radio_btn in enumerate(self.RangeGroup.buttons()) if radio_btn.isChecked()]
+            if self.startvolt < -2.5 or self.startvolt > 2.5 or self.firstvolt < -2.5 or self.firstvolt > 2.5 or self.secondvolt < -2.5 or self.secondvolt > 2.5:
+                error_dialog = QMessageBox()
+                error_dialog.setIcon(QMessageBox.Critical)
+                error_dialog.setText("Start potential must be between -2.5 and +2.5 V")
+                error_dialog.setWindowTitle("Input Error")
+                error_dialog.exec_()
+                return
 
+            if self.scanrate <= 0.00001 or self.scanrate > 60:
+                error_dialog = QMessageBox()
+                error_dialog.setIcon(QMessageBox.Critical)
+                error_dialog.setText("Scan rate must be between 0.00001 and 60 V/s")
+                error_dialog.setWindowTitle("Input Error")
+                error_dialog.exec_()
+            
+                return
+            
 
-        if not i[0]:
-            error_dialog = QMessageBox()
-            error_dialog.setIcon(QMessageBox.Critical)
-            error_dialog.setText("Please select a current range.")
-            error_dialog.setWindowTitle("Input Error")
-            error_dialog.exec_()
-            return
-        RITA=int(ResistorValues[i[0]])
-        print(RITA)
+            DAC1= int(round (self.startvolt /(DAC_QUANT * GAIN)+DAC_OFFSET))
+            DAC2= int(round (self.firstvolt /(DAC_QUANT * GAIN)+DAC_OFFSET))
+            DAC3= int(round (self.secondvolt /(DAC_QUANT * GAIN)+DAC_OFFSET))
 
+            numpoint= abs(DAC2-DAC1) + abs(DAC3-DAC2) + abs(DAC1-DAC3)
+            totpoint= numpoint * self.cycnum
 
-        cycnum = int(self.I_NumCycles.text())
-        startvolt = float(self.I_StartVoltage.text())
-        firstvolt = float(self.I_FirstVoltage.text())
-        secondvolt = float(self.I_SecondVoltage.text())
-        scanrate = float(self.I_ScanRate.text())
-        resistorval = float(RITA)
-        filename = self.I_FileName.text()
-
-   
-        if cycnum <= 0 or cycnum > 100:
-            error_dialog = QMessageBox()
-            error_dialog.setIcon(QMessageBox.Critical)
-            error_dialog.setText("Number of cycles must be between 1 and 100")
-            error_dialog.setWindowTitle("Input Error")
-            error_dialog.exec_()
-            return
-
-        if startvolt < -2.5 or startvolt > 2.5 or firstvolt < -2.5 or firstvolt > 2.5 or secondvolt < -2.5 or secondvolt > 2.5:
-            error_dialog = QMessageBox()
-            error_dialog.setIcon(QMessageBox.Critical)
-            error_dialog.setText("Start potential must be between -2.5 and +2.5 V")
-            error_dialog.setWindowTitle("Input Error")
-            error_dialog.exec_()
-            return
-
-        if scanrate <= 0.00001 or scanrate > 100:
-            error_dialog = QMessageBox()
-            error_dialog.setIcon(QMessageBox.Critical)
-            error_dialog.setText("Scan rate must be between 0.00001 and 100 V/s")
-            error_dialog.setWindowTitle("Input Error")
-            error_dialog.exec_()
+            if totpoint > 52000:
+                error_dialog = QMessageBox()
+                error_dialog.setIcon(QMessageBox.Critical)
+                error_dialog.setText("total number of points is too large")
+                error_dialog.setWindowTitle("Input Error")
+                error_dialog.exec_()
+                
+        except:
             return
         
-        # Check if current range and capacitor range buttons are selected
-        current_range_selected = self.current_range_button_group.checkedButton()
-        capacitor_range_selected = self.capacitor_range_button_group.checkedButton()
-
-
-        if not current_range_selected:
-            error_dialog = QMessageBox()
-            error_dialog.setIcon(QMessageBox.Critical)
-            error_dialog.setText("Please select a current range.")
-            error_dialog.setWindowTitle("Input Error")
-            error_dialog.exec_()
-            return
-
-        if not capacitor_range_selected:
-            error_dialog = QMessageBox()
-            error_dialog.setIcon(QMessageBox.Critical)
-            error_dialog.setText("Please select a capacitor range.")
-            error_dialog.setWindowTitle("Input Error")
-            error_dialog.exec_()
-            return
-
-
+        
         print("Running CV with the following parameters:")
-        print(f"Number of cycles: {cycnum}")
-        print(f"Start potential: {startvolt}")
-        print(f"First inversion potential: {firstvolt}")
-        print(f"Second inversion potential: {secondvolt}")
-        print(f"Scan rate: {scanrate}")
-        print(f"Resistor value: {resistorval}")
-        print(f"Filename: {filename}")
+        print(f"Number of cycles: {self.cycnum}")
+        print(f"Start potential: {self.startvolt}")
+        print(f"First inversion potential: {self.firstvolt}")
+        print(f"Second inversion potential: {self.secondvolt}")
+        print(f"Scan rate: {self.scanrate}")
+        print(f"Resistor value: {self.resistorval}")
+        print(f"Capacitor value: {self.CAPVal}")
+        print(f"Filename: {self.filename}")
 
+
+     
+        
         # Only start if there's no active process
         if self.process is None or not self.process.is_alive():
-            self.process = Process(target=execute_CV)
+            self.process = Process(target=execute_CV, args=(self,))
             self.process.start()
 
     def Stop_CMD(self):
@@ -222,15 +242,98 @@ class CVTab(QWidget):
             self.process.terminate()
             self.process.join()  # Ensure the process has fully terminated
             self.process = None  # Reset the process reference
+            if self.Arduino_Serial is not None:
+                self.Arduino_Serial.close()
             print("Task terminated")
 
 
-def execute_CV( ):
-    
-    for i in range(20):
-        time.sleep(1)  # Simulating a long task (20 seconds in total)
-        print(f"Running... {i + 1} seconds")  # This will show in the console
-    print("Task completed")
+def Save(self):
+    # Save graph as a png file
+    self.figure.savefig(self.filename + ".png")
+    print("Graph saved as " + self.filename + ".png")
 
+
+def execute_CV(self):
+
+
+    CMDid= 1 #this is to show what kidns of  test is being done to the teensy   
+
+    #TODo add a ping precees to see if the teensy is connected and if not to show a error message
+
+    period = int(round(1e6 / (self.scanrate * DAC_QUANT)))
+    DAC1= int(round (self.startvolt /(DAC_QUANT * GAIN)+DAC_OFFSET))
+    DAC2= int(round (self.firstvolt /(DAC_QUANT * GAIN)+DAC_OFFSET))
+    DAC3= int(round (self.secondvolt /(DAC_QUANT * GAIN)+DAC_OFFSET))
+
+  
+
+    transmit = str(CMDid)  + "," + str( period) + "," + str(DAC1) + "," + str(DAC2) + "," + str(DAC3) + "," + str(self.cycnum) + "," + str(DAC_OFFSET) +"\n"
+
+    portname="COM" + str(self.PortNumber)
+    Arduino_Serial = serial.Serial(portname, BAUD_RATE, TIMEOUT)
+
+    # Send CV parameters to Teensy to start measurement
+    message = transmit.encode("utf-8")
+    Arduino_Serial.write(message)
+    print("You Transmitted:", transmit)
+
+
+    numpoint= int(abs(DAC2-DAC1) + abs(DAC3-DAC2) + abs(DAC1-DAC3))
+    totpoint= int(numpoint * self.cycnum)
+   
+    Data = np.zeros((numpoint, self.cycnum + 1))
+     # Loop to detect end of measurement message from Arduino
+    while True:
+        received = Arduino_Serial.readline()[:-2]
+        received_utf8 = received.decode("utf-8")
+        if received_utf8 == "END":
+            print("Measurement completed")
+            break
+        if received_utf8 != "" and received_utf8 != "END":
+            
+            for k in range(1, self.cycnum + 1):
+                for j in range(numpoint):
+                    data = Arduino_Serial.readline()[:-2]
+                    data_utf8 = data.decode("utf-8")
+                    line = data_utf8.split(",")
+                    Data[j, 0] = (int(line[0]) - DAC_OFFSET) * GAIN * DAC_QUANT
+                    Data[j, k] =(int(line[1]) - ADC_OFFSET[int(self.Rindex)]) * ADC_QUANT[int(self.Rindex)] * CONV_COEFF * (CurrentMultiplier[self.Rindex]/ResistorValues[self.Rindex]) 
+                    print(Data[j, 0], Data[j, k])
+        
+
+    # Plot the data
+
+    self.ax.clear()
+    for k in range(1, self.cycnum + 1):
+            Data[:, k] *= CurrentMultiplier[self.Rindex]
+            self.ax.plot(Data[:, 0], Data[:, k], label="Cycle " + str(k))
+    self.ax.grid(True)
+    self.ax.legend()
+    self.ax.set_xlabel('Voltage (V)')
+    self.ax.set_ylabel('Current (' + CurrentUnit[self.Rindex] + ')')
+    self.ax.set_title('Cyclic Voltammetry')
+    self.canvas.draw()
+
+    self.Arduino_Serial.close()
+
+    # Save the data to a CSV file
+    with open(self.filename + ".csv", "w") as file:
+        for k in range(1, self.cycnum + 1):
+                for j in range(numpoint):
+                 file.write(f"{Data[j, 0]},{Data[j, k]}\n")
+    print("Data saved to " + self.filename + ".csv")
+
+
+
+
+
+        
+
+
+    
+    #TODO: change the 1 to the indeal unit for the graph
+
+
+    print("Plotting completed")
 
 
