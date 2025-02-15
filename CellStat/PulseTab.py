@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton
 from PyQt5.QtCore import Qt
 
 class PulseTab(QWidget):
-    def __init__(self):
+    def __init__(self,port):
         super().__init__()
         
         # Initialize the counter

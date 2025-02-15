@@ -1,6 +1,6 @@
 #cailbration
 # place all cailbration resistance and ressitance and capcitor values here 
-
+import serial
 KOHM=1000
 
 CurrentRange= ["±2.5mA", "±.25mA", "±25uA", "±2.5uA", "±.25uA", "±72uA", "±25nA", "±2.5nA"]
@@ -22,4 +22,18 @@ ADC_QUANT = 3.3 / 4095
 CONV_COEFF = 1.51  # Inverse of the output voltage divider
 GAIN = -1.0 
 
+def teensy_ping(port):
+    #opens the serial port and sends a ping to the teensy and sends the dac offset 
+    # if a teensy is connected to the 
+    
+    ser = serial.Serial(port, 115200, timeout=1)
+    if ser.is_open():
+        
+        ser.write(b'test\n'+str(DAC_OFFSET).encode()+b'\n')
+        ser.flush()
+        ser.close()
 
+    else:
+        print("Port not open")
+        ser.close()
+    

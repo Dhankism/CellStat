@@ -4,37 +4,34 @@ from operator import index
 from socket import CAPI
 import matplotlib.pyplot as plt
 import numpy as np
-import time
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-
+import serial
+from datetime import datetime
 
 from ping import *
 from cailbration import *
 
-CodeRunningFlag=False
-PortNumber=3
+
+
 BAUD_RATE = 115200
 TIMEOUT = 3
 
 class CVTab(QWidget):
-    def __init__(self):
+    def __init__(self, port):
         super().__init__()
+        self.process_flag = False
+        self.layout = QGridLayout()
+        self.serial_connection = None
         
-        layout = QGridLayout()
-
         # Label and Line Edit for CV Tab
         i = QLabel("CV Tab")
-
-        #PortNumber=ping_by_vid()
-        self.PortNumber=3
-        self.L_PortNum = QLabel("Port number: " + str(self.PortNumber))
-        self.Ping_button = QPushButton("Reset")
-
+        self.PortNum= port
+        
 
       # Cyclic Voltammetry (CV) parameters
       # L = Label 
@@ -94,30 +91,27 @@ class CVTab(QWidget):
         self.SaveButton = QPushButton("Save")
         #self.SaveButton.clicked.connect(self.Save)
 
-        layout.addWidget(self.L_PortNum,0,0)
-        layout.addWidget(self.Ping_button,0,1)
-        layout.addWidget(self.L_StartVoltage,1,0)
-        layout.addWidget(self.I_StartVoltage,1,1)
-        layout.addWidget(self.L_FirstVoltage,2,0)
-        layout.addWidget(self.I_FirstVoltage,2,1)
-        layout.addWidget(self.L_SecondVoltage,3,0)
-        layout.addWidget(self.I_SecondVoltage,3,1)
+        self.layout.addWidget(self.L_FileName,0,0)
+        self.layout.addWidget(self.I_FileName,0,1)
+        self.layout.addWidget(self.L_StartVoltage,1,0)
+        self.layout.addWidget(self.I_StartVoltage,1,1)
+        self.layout.addWidget(self.L_FirstVoltage,2,0)
+        self.layout.addWidget(self.I_FirstVoltage,2,1)
+        self.layout.addWidget(self.L_SecondVoltage,3,0)
+        self.layout.addWidget(self.I_SecondVoltage,3,1)
         
-        layout.addWidget(self.L_NumCycles,0,2)
-        layout.addWidget(self.I_NumCycles,0,3)
-        layout.addWidget(self.L_ScanRate,1,2)
-        layout.addWidget(self.I_ScanRate,1,3)
-        layout.addWidget(self.L_CurrentRange,2,2)
-        layout.addLayout(self.RangeList,2,3)
-        layout.addWidget(self.L_CapRange,3,2)
-        layout.addLayout(self.CapList,3,3)
+        self.layout.addWidget(self.L_NumCycles,0,2)
+        self.layout.addWidget(self.I_NumCycles,0,3)
+        self.layout.addWidget(self.L_ScanRate,1,2)
+        self.layout.addWidget(self.I_ScanRate,1,3)
+        self.layout.addWidget(self.L_CurrentRange,2,2)
+        self.layout.addLayout(self.RangeList,2,3)
+        self.layout.addWidget(self.L_CapRange,3,2)
+        self.layout.addLayout(self.CapList,3,3)
 
-        layout.addWidget(self.L_FileName,4,0)
-        layout.addWidget(self.I_FileName,4,1,1,4)
-
-        layout.addWidget(self.StopButton,5,0)
-        layout.addWidget(self.StartButton,5,1,1,1)
-        layout.addWidget(self.SaveButton,5,3)
+        self.layout.addWidget(self.StopButton,4,0)
+        self.layout.addWidget(self.StartButton,4,1,1,1)
+        self.layout.addWidget(self.SaveButton,4,3)
        
        # Creating the canvas for plotting and the toolbar
         self.figure = plt.Figure()
@@ -125,11 +119,17 @@ class CVTab(QWidget):
         self.toolbar = NavigationToolbar(self.canvas, self)
         self.ax = self.figure.add_subplot(111)
        
-        layout.addWidget(self.toolbar,6,0,1,2)
-        layout.addWidget(self.canvas,7,0,5,5)
+        self.layout.addWidget(self.toolbar,6,0,1,2)
+        self.layout.addWidget(self.canvas,7,0,5,5)
+        self.setLayout(self.layout)
 
-        self.setLayout(layout)
+    def update_port(self, newport):
+        self.PortNum = newport
 
+        # Update any other components or processes that depend on the port
+
+    def is_process_running(self):
+        return self.process_flag is True and self.process.is_alive()
 
     # Function to run the CV process and to check the inputs
     def Run_CMD(self):
@@ -173,7 +173,7 @@ class CVTab(QWidget):
             self.CAPVal =        int(CapacitorValues[self.Cindex])
             self.filename =      self.I_FileName.text()
 
-    
+            #check to see if the cycle is in the correct range
             if self.cycnum <= 0 or self.cycnum > 100:
                 error_dialog = QMessageBox()
                 error_dialog.setIcon(QMessageBox.Critical)
@@ -181,7 +181,7 @@ class CVTab(QWidget):
                 error_dialog.setWindowTitle("Input Error")
                 error_dialog.exec_()
                 return
-
+            #check to see if the voltage is in the correct range
             if self.startvolt < -2.5 or self.startvolt > 2.5 or self.firstvolt < -2.5 or self.firstvolt > 2.5 or self.secondvolt < -2.5 or self.secondvolt > 2.5:
                 error_dialog = QMessageBox()
                 error_dialog.setIcon(QMessageBox.Critical)
@@ -189,7 +189,7 @@ class CVTab(QWidget):
                 error_dialog.setWindowTitle("Input Error")
                 error_dialog.exec_()
                 return
-
+            #check to see if the scan rate is in the correct range
             if self.scanrate <= 0.00001 or self.scanrate > 60:
                 error_dialog = QMessageBox()
                 error_dialog.setIcon(QMessageBox.Critical)
@@ -205,9 +205,9 @@ class CVTab(QWidget):
             DAC3= int(round (self.secondvolt /(DAC_QUANT * GAIN)+DAC_OFFSET))
 
             numpoint= abs(DAC2-DAC1) + abs(DAC3-DAC2) + abs(DAC1-DAC3)
-            totpoint= numpoint * self.cycnum
-
-            if totpoint > 52000:
+            self.totpoint= numpoint * self.cycnum
+            #check to see is the there is enough points
+            if self.totpoint > 52000:
                 error_dialog = QMessageBox()
                 error_dialog.setIcon(QMessageBox.Critical)
                 error_dialog.setText("total number of points is too large")
@@ -232,8 +232,8 @@ class CVTab(QWidget):
      
         
         # Only start if there's no active process
-        if self.process is None or not self.process.is_alive():
-            self.process = Process(target=execute_CV, args=(self,))
+        if self.process_flag is False or not self.process.is_alive():
+            self.process = Process(target=self.execute_CV, args=(self,))
             self.process.start()
 
     def Stop_CMD(self):
@@ -241,99 +241,102 @@ class CVTab(QWidget):
         if self.process is not None and self.process.is_alive():
             self.process.terminate()
             self.process.join()  # Ensure the process has fully terminated
-            self.process = None  # Reset the process reference
-            if self.Arduino_Serial is not None:
-                self.Arduino_Serial.close()
+            if self.serial_connection is not None:
+                self.serial_connection.close()
+                self.serial_connection.close()
             print("Task terminated")
 
 
-def Save(self):
-    # Save graph as a png file
-    self.figure.savefig(self.filename + ".png")
-    print("Graph saved as " + self.filename + ".png")
+    def Save(self):
+        # Save graph as a png file
+        self.figure.savefig(self.filename + ".png")
+        print("Graph saved as " + self.filename + ".png")
 
 
-def execute_CV(self):
+    def execute_CV(self):
 
 
-    CMDid= 1 #this is to show what kidns of  test is being done to the teensy   
-
-    #TODo add a ping precees to see if the teensy is connected and if not to show a error message
-
-    period = int(round(1e6 / (self.scanrate * DAC_QUANT)))
-    DAC1= int(round (self.startvolt /(DAC_QUANT * GAIN)+DAC_OFFSET))
-    DAC2= int(round (self.firstvolt /(DAC_QUANT * GAIN)+DAC_OFFSET))
-    DAC3= int(round (self.secondvolt /(DAC_QUANT * GAIN)+DAC_OFFSET))
-
-  
-
-    transmit = str(CMDid)  + "," + str( period) + "," + str(DAC1) + "," + str(DAC2) + "," + str(DAC3) + "," + str(self.cycnum) + "," + str(DAC_OFFSET) +"\n"
-
-    portname="COM" + str(self.PortNumber)
-    Arduino_Serial = serial.Serial(portname, BAUD_RATE, TIMEOUT)
-
-    # Send CV parameters to Teensy to start measurement
-    message = transmit.encode("utf-8")
-    Arduino_Serial.write(message)
-    print("You Transmitted:", transmit)
-
-
-    numpoint= int(abs(DAC2-DAC1) + abs(DAC3-DAC2) + abs(DAC1-DAC3))
-    totpoint= int(numpoint * self.cycnum)
-   
-    Data = np.zeros((numpoint, self.cycnum + 1))
-     # Loop to detect end of measurement message from Arduino
-    while True:
-        received = Arduino_Serial.readline()[:-2]
-        received_utf8 = received.decode("utf-8")
-        if received_utf8 == "END":
-            print("Measurement completed")
-            break
-        if received_utf8 != "" and received_utf8 != "END":
-            
-            for k in range(1, self.cycnum + 1):
-                for j in range(numpoint):
-                    data = Arduino_Serial.readline()[:-2]
-                    data_utf8 = data.decode("utf-8")
-                    line = data_utf8.split(",")
-                    Data[j, 0] = (int(line[0]) - DAC_OFFSET) * GAIN * DAC_QUANT
-                    Data[j, k] =(int(line[1]) - ADC_OFFSET[int(self.Rindex)]) * ADC_QUANT[int(self.Rindex)] * CONV_COEFF * (CurrentMultiplier[self.Rindex]/ResistorValues[self.Rindex]) 
-                    print(Data[j, 0], Data[j, k])
-        
-
-    # Plot the data
-
-    self.ax.clear()
-    for k in range(1, self.cycnum + 1):
-            Data[:, k] *= CurrentMultiplier[self.Rindex]
-            self.ax.plot(Data[:, 0], Data[:, k], label="Cycle " + str(k))
-    self.ax.grid(True)
-    self.ax.legend()
-    self.ax.set_xlabel('Voltage (V)')
-    self.ax.set_ylabel('Current (' + CurrentUnit[self.Rindex] + ')')
-    self.ax.set_title('Cyclic Voltammetry')
-    self.canvas.draw()
-
-    self.Arduino_Serial.close()
-
-    # Save the data to a CSV file
-    with open(self.filename + ".csv", "w") as file:
-        for k in range(1, self.cycnum + 1):
-                for j in range(numpoint):
-                 file.write(f"{Data[j, 0]},{Data[j, k]}\n")
-    print("Data saved to " + self.filename + ".csv")
-
-
-
-
-
-        
-
+        CMDid= 1 #this is to show what kind of  test is being done to the teensy   
+        period = int(round(1e6 / (self.scanrate * DAC_QUANT)))
+        DAC1= int(round (self.startvolt /(DAC_QUANT * GAIN)+DAC_OFFSET))
+        DAC2= int(round (self.firstvolt /(DAC_QUANT * GAIN)+DAC_OFFSET))
+        DAC3= int(round (self.secondvolt /(DAC_QUANT * GAIN)+DAC_OFFSET))
 
     
-    #TODO: change the 1 to the indeal unit for the graph
+        # Transmit the CV parameters to the Teensy
+        #transmit= id, period, DAC1, DAC2, DAC3, cycles, DAC_OFFSET
+        transmit = str(CMDid)  + "," + str( period) + "," + str(DAC1) + "," + str(DAC2) + "," + str(DAC3) + "," + str(self.cycnum) + "," + str(DAC_OFFSET) +"\n"
+
+        portname = "COM" + self.PortNum
+        serial_connection = serial.Serial(portname, BAUD_RATE, TIMEOUT)
+
+        message = transmit.encode("utf-8")
+        serial_connection.write(message)
+        print("You Transmitted:", transmit)
+
+        # Get the current date and time
+        now = datetime.now()
+        dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
 
 
-    print("Plotting completed")
+        # Send CV parameters to Teensy to start measurement
+        numpoint= int(abs(DAC2-DAC1) + abs(DAC3-DAC2) + abs(DAC1-DAC3))
+        self.totpoint
+        
+        dataamount= 0
+        Data = np.zeros((numpoint, self.cycnum + 1))
+        # Loop to detect end of measurement message from Arduino
+        while True:
+            received = serial_connection.readline()[:-2]
+            received_utf8 = received.decode("utf-8")
+            if received_utf8 == "END":
+                print("Measurement completed")
+                break
+            if received_utf8 != "" and received_utf8 != "END":
+                
+                for k in range(1, self.cycnum + 1):
+                    for j in range(numpoint):
+                        data = serial_connection.readline()[:-2]
+                        data_utf8 = data.decode("utf-8")
+                        line = data_utf8.split(",")
+                        Data[j, 0] = (int(line[0]) - DAC_OFFSET) * GAIN * DAC_QUANT
+                        Data[j, k] =(int(line[1]) - ADC_OFFSET[int(self.Rindex)]) * ADC_QUANT[int(self.Rindex)] * CONV_COEFF * (CurrentMultiplier[self.Rindex]/ResistorValues[self.Rindex]) 
+                        print(Data[j, 0], Data[j, k])
+                        dataamount += 1
+                        if dataamount <= self.totpoint:
+                            print("error too many data points")
+                            break
+            
+        
+        # Plot the data
+        
+        self.ax.clear()
+        for k in range(1, self.cycnum + 1):
+                Data[:, k] *= CurrentMultiplier[self.Rindex]
+                self.ax.plot(Data[:, 0], Data[:, k], label="Cycle " + str(k))
+        self.ax.grid(True)
+        self.ax.legend()
+        self.ax.set_xlabel('Voltage (V)')
+        self.ax.set_ylabel('Current (' + CurrentUnit[self.Rindex] + ')')
+        self.ax.set_title('Cyclic Voltammetry')
+        self.canvas.draw()
+
+        serial_connection.close()
+
+        #get date when the data was taken
+        
+       
+        
+        # Save the data to a CSV file adding the date and time
+        if self.filename == 
+        with open(self.filename + ".csv", "w") as file:
+            file.write("Data taken on: " + dt_string + "\n")
+            file.write("Voltage (V),Current (" + CurrentUnit[self.Rindex] + ")\n")
+            for k in range(1, self.cycnum + 1):
+                for j in range(numpoint):
+                    file.write(f"{Data[j, 0]},{Data[j, k]}\n")
+        print("Data saved to " + self.filename + ".csv")
 
 
+
+        print("Plotting completed")
