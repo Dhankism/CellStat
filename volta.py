@@ -23,7 +23,7 @@ class Fenetre1(QWidget):
                 #self.PORT_BOARD = "/dev/cu.usbmodem"         # for MAC CPU
                 #self.PORT_BOARD="/dev/ttyACM"                # for linux
                 self.PORT_BOARD = "COM"                     # for PC CPU
-                self.BAUD_RATE =  9600
+                self.BAUD_RATE =  115200
                 self.TIME_OUT = 5
                 
                 self.EMPTY    = ""
@@ -104,10 +104,10 @@ class Fenetre1(QWidget):
                 self.CONV_PERIOD_ARDUINO = 1000.             # in order to convert in ms
                 self.DELAY_STAB_ARDUINO  = 2.0
                 
-                self.QUANT_DAC_TEENSY    = 1./800      # extracted from calibration process
-                self.OFFSET_DAC_TEENSY   = 2093           # extracted from calibration process
-                self.QUANT_ADC_TEENSY    = 3.3/4095
-                self.OFFSET_ADC_TEENSY   = 2045.0
+                self.QUANT_DAC_TEENSY    = 1./828.33      # extracted from calibration process
+                self.OFFSET_DAC_TEENSY   = 2069           # extracted from calibration process
+                self.QUANT_ADC_TEENSY    = 5/4095
+                self.OFFSET_ADC_TEENSY   = 2043.0
                 self.COEFF_CONV_TEENSY   = 5/3.3              # inverse of the output voltage divider
                 self.CONV_PERIOD_TEENSY  = 1.0 * 1000000.    # in order to convert in micros and take care of the first stage gain
                 self.DELAY_STAB_TEENSY   = 2.0
@@ -531,7 +531,7 @@ class Fenetre1(QWidget):
                 self.Arduino_Serial.write(message)
                 print ("You Transmitted :", transmit)
                 print ("Acquisition number/cycle :", 2*(int(str_vstart) - int(str_vstop) + 1))               
-                self.nb_cycle    = int(str_cycle)              
+                self.nb_cycle  = int(str_cycle)              
                 code_vstart = int(str_vstart)
                 code_vstop  = int(str_vstop)
                 code_vstop1  = int(str_vstop1)
@@ -573,9 +573,17 @@ class Fenetre1(QWidget):
                 global  index_param
                 i_acq = 0
                 ctrl_while = True
-                time.sleep(self.acq_time + 10 ) # to avoid a long time out for the serial link
-        
+                # time.sleep(self.acq_time + 10 ) # to avoid a long time out for the serial link
+
+                # start_time = time.time()
+                # while (self.Arduino_Serial.in_waiting == 0 and (time.time() - start_time) > self.acq_time + 10):
+                #        pass
+                start_time = time.time()
                 while (ctrl_while):
+                        
+                        while (self.Arduino_Serial.in_waiting == 0 and (time.time() - start_time) >self .acq_time*1.2):
+                                pass
+
                         # reads line from Arduino and 
                         raw_data = self.Arduino_Serial.readline()
                         # while raw_data[-1]!=0x0A: # Hangs indefinitely because it never receives anymore data at some point
@@ -607,17 +615,18 @@ class Fenetre1(QWidget):
                                 
                                 
                                 data_file = (f"{val_v:.6f}") + self.COMMA + (f"{val_c:.6f}") # six decimals
-                                nbytes = file.write(data_file + self.NEW_LINE)   # write data from Arduino in the file + NL 
+                                file.write(data_file + self.NEW_LINE)   # write data from Arduino in the file + NL 
                                 i_acq = i_acq + 1
 
                                 
                                 if (i_acq == nb_acq_tot):
                                         ctrl_while = False
                         else:
-                                print("cant find data ")
+                                print(f"amount of time passed: { (time.time() - start_time)/60 } min")
+
                 index_param += 1
                 self.index_acq   += 1
-                file.flush()            # Don't forget to flush before closing the file
+                file.flush  # Don't forget to flush before closing the file
                 file.close
                 self.CMD_AVA[self.TRA] = self.CMD_TRA
                 self.Arduino_Serial.close()
@@ -727,7 +736,7 @@ class Fenetre1(QWidget):
                              msg = QMessageBox()
                              msg.setIcon(QMessageBox.Critical)
                              msg.setText("Error")
-                             msg.setInformativeText('the current supplied by the card is between -2.5 and 2.5')
+                             msg.setInformativeText('the Voltage supplied by the card is between -2.5 and 2.5 please use a smaller value ')
                              msg.setWindowTitle("Error")
                              msg.setWindowTitle('Quit')
 
@@ -811,7 +820,8 @@ class Fenetre1(QWidget):
                                                 self.set_acq_limits(self.params)
                                                 #print(f_cycle, vstart, vstop, srate)                                                     
                                                 self.acq_time = ( f_cycle * (abs(vstart - vstop) + abs(vstop-vstop1)+abs(vstop1-vstart))/srate) + delay_stab # add the delay to stabilize vstart
-                                                print( "The acquisition will take roughly : ", (f"{self.acq_time:.2f}"), " seconds")              
+                                                timeinmins=self.acq_time/60
+                                                print( "The acquisition will take roughly : ", (f"{timeinmins:.2f}"), " minuits")              
                                                 self.set_acq_value(board)
                                                 time.sleep(10*self.DELAY_01s)
                                                 self.CMD_AVA[self.ACQ] = self.CMD_ACQ
