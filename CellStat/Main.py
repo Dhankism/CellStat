@@ -30,14 +30,14 @@ class MainWindow(QMainWindow):
         self.update_port_button = QPushButton("Update Port")
         self.update_port_button.clicked.connect(self.update_port)
         self.tabs.setCornerWidget(self.update_port_button)
-        if(self.port is not None):
+        if(self.port != 'None'):
             self.update_port_button.setText(f"Update Port (Current: {self.port})")
         else:
              self.update_port_button.setText("Update Port (No Device Found)")
         
     def update_port(self):
         if not self.cv_tab.is_process_running() :
-            self.port = "COM" + str(ping_by_vid())
+            self.port = str(ping_by_vid())
             self.cv_tab.update_port(self.port)
            # self.pulse_tab.update_port(self.port)
             QMessageBox.information(self, "Port Updated", f"Port: {self.port}")

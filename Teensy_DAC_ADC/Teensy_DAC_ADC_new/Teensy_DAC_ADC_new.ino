@@ -128,19 +128,19 @@ void cap(int index){
 
   switch (index) {
 
-    // input array of what the user 0:2p  1:20p   2:50p   3:100p  4:200p  5:1n  6:50n  7:100n 
-  // output array  2p:x3  20p:x0  50p:x1  100p:x2 200p:x5 1n:x7 50n:x6 100n:x4
-    case 1: //x0
+    // input array of what the user wants 0:2p  1:20p   2:50p   3:100p  4:200p  5:1n  6:50n  7:100n 
+  // output array                        2p:x3  20p:x0  50p:x1  100p:x2 200p:x5 1n:x7 50n:x6 100n:x4
+    case 1: //20
       digitalWrite(cap_port1, LOW);
       digitalWrite(cap_port2, LOW);
       digitalWrite(cap_port3, LOW);
       break;
-    case 2://x1
+    case 2://50p
       digitalWrite(cap_port1, HIGH);
       digitalWrite(cap_port2, LOW);
       digitalWrite(cap_port3, LOW);
       break;
-    case 3://x2
+    case 3://100p
       digitalWrite(cap_port1, LOW);
       digitalWrite(cap_port2, HIGH);
       digitalWrite(cap_port3, LOW);

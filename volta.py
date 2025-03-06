@@ -104,9 +104,9 @@ class Fenetre1(QWidget):
                 self.CONV_PERIOD_ARDUINO = 1000.             # in order to convert in ms
                 self.DELAY_STAB_ARDUINO  = 2.0
                 
-                self.QUANT_DAC_TEENSY    = 1./828.33      # extracted from calibration process
+                self.QUANT_DAC_TEENSY    = 1./800.33      # extracted from calibration process
                 self.OFFSET_DAC_TEENSY   = 2069           # extracted from calibration process
-                self.QUANT_ADC_TEENSY    = 5/4095
+                self.QUANT_ADC_TEENSY    = 3.33/4095
                 self.OFFSET_ADC_TEENSY   = 2043.0
                 self.COEFF_CONV_TEENSY   = 5/3.3              # inverse of the output voltage divider
                 self.CONV_PERIOD_TEENSY  = 1.0 * 1000000.    # in order to convert in micros and take care of the first stage gain
@@ -609,7 +609,7 @@ class Fenetre1(QWidget):
                                         i_cycle = 2
                                 #print(index_acq, i_cycle)
                                 val_v = (int(line[0]) - offset_DAC) * gain * quant_DAC
-                                val_c = (int(line[1]) - offset_ADC) * quant_ADC * coeff_conv * (c_unit/self.rtia_val) # select COEFF_mA or COEFF_microA
+                                val_c = ((int(line[1])-2045) *5/4095 * (c_unit/self.rtia_val)) # select COEFF_mA or COEFF_microA
                                 self.x_data[self.index_acq][i_cycle].append(val_v)                                                
                                 self.y_data[self.index_acq][i_cycle].append(val_c)
                                 

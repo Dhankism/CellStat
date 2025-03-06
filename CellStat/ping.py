@@ -1,7 +1,10 @@
+from serial import *
 import serial.tools.list_ports
 from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout, QLabel, QRadioButton, QPushButton, QButtonGroup
 import sys
+from cailbration import *
 
+BAUD_RATE = 115200
 
 class PortSelectionDialog(QDialog):
     def __init__(self, ports):
@@ -73,5 +76,24 @@ def ping_by_vid(teensy_vid='16C0'):
         return selected_port
 
     return None
+
+
+
+def teensy_ping(port):
+    #opens the serial port and sends a ping to the teensy and sends the dac offset 
+    # if a teensy is connected to the 
+    
+    ser = serial.Serial(port, 115200, timeout=1)
+    if ser.is_open():
+        
+        ser.write(b'0 ,'+str(DAC_OFFSET).encode()+b'\n')
+        ser.flush()
+        ser.close()
+
+    else:
+        print("Port not open")
+        ser.close()
+    
+
 
 
