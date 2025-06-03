@@ -2,7 +2,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QPushButton, QMessageBox
 from CVTab import CVTab
-from PulseTab import PulseTab
+from SWVTab import SWVTab
 from ping import ping_by_vid
 
 class MainWindow(QMainWindow):
@@ -17,12 +17,12 @@ class MainWindow(QMainWindow):
         # Create QTabWidget and set up tabs
         self.tabs = QTabWidget()
         self.cv_tab = CVTab(self.port)
-        self.pulse_tab = PulseTab(self.port)
-        
+        self.swv_tab = SWVTab(self.port)
+
         # Set custom tab names
         self.tabs.addTab(self.cv_tab, "CV")
-        self.tabs.addTab(self.pulse_tab, "Pulse")
-        
+        self.tabs.addTab(self.swv_tab, "SWV")
+
         # Set the central widget of the main window
         self.setCentralWidget(self.tabs)
 
@@ -41,11 +41,9 @@ class MainWindow(QMainWindow):
             self.cv_tab.update_port(self.port)
            # self.pulse_tab.update_port(self.port)
             QMessageBox.information(self, "Port Updated", f"Port: {self.port}")
+            self.update_port_button.setText(f"Update Port (Current: {self.port})")
         else:
             QMessageBox.warning(self, "Process Running", "Cannot update port while a process is running.")
-
-
-  
 
 
 def main():

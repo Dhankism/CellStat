@@ -1,5 +1,5 @@
 # CVTab.py
-import multiprocessing
+from turtle import st
 import matplotlib.pyplot as plt
 import numpy as np
 from PyQt5.QtWidgets import *
@@ -11,6 +11,7 @@ from matplotlib.figure import Figure
 import serial
 from datetime import datetime
 import time
+import csv  # Add this import at the top
 
 from ping import *
 from cailbration import *
@@ -19,7 +20,7 @@ BAUD_RATE = 115200
 TIMEOUT = 30
 ResetCMD="RESET\n"
 
-class CVWorker(QThread):
+class CVWorker(QThread): # Worker thread for Cyclic Voltammetry (CV) measurements
     data_ready = pyqtSignal(np.ndarray)
 
     def __init__(self, transmit, port_name):
@@ -40,46 +41,95 @@ class CVWorker(QThread):
 
             dataamount = 0
             Data = []
+            CycleData = []  # List to store arrays for each cycle
+            current_cycle = -1  # Track the current cycle index
             buffer = ""
-            start_time = time.time()
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            filename = self.parent().I_FileName.text()
+            start_time = time.time()  # Start time for timeout
             time.sleep(10)
             # Loop to detect end of measurement message from Arduino
             while True:
-                while (self.serial_connection.in_waiting == 0 and (time.time() - start_time) > 40):
+                while (self.serial_connection.in_waiting == 0):  # Wait for data
                     pass
-                
+
                 received = self.serial_connection.readline().decode("utf-8")
                 buffer += received
-                while "\n" in buffer:
+                while "\n" in buffer:  # Split the buffer by newlines
                     line, buffer = buffer.split("\n", 1)
                     line = line.strip()
                     if line == "END":
                         print("Measurement completed")
                         self.serial_connection.close()
                         Data = np.array(Data)
+                        # Convert each cycle's data to np.array
+                        CycleData = [np.array(cycle) for cycle in CycleData]
                         self.data_ready.emit(Data)
+                        # Save data to CSV file here
+                        self.save_cycles_to_csv(now, CycleData, filename)
                         return
+                    if line.startswith("CYCLE_"):
+                        cycle_num = int(line.split("_")[1])
+                        # Start a new cycle array
+                        CycleData.append([])
+                        current_cycle += 1
+                        print(f"Starting new cycle: {cycle_num}")
+                       
+                        continue
                     if line:
                         print(line)
                         line = line.split(",")
                         try:
                             voltage = (int(line[0]) - DAC_OFFSET) * GAIN / DAC_QUANT
-                            current = (int(line[1]) - ADC_OFFSET[2]) * ADC_QUANT  * CurrentMultiplier[2] / ResistorValues[2]
+                            current = (int(line[1]) - ADC_OFFSET[2]) * ADC_QUANT * CurrentMultiplier[2] / ResistorValues[2]
                             print(voltage, ",", current)
                             Data.append([voltage, current])
                             dataamount += 1
+                            # Store in current cycle if a cycle has started
+                            if current_cycle >= 0:
+                                CycleData[current_cycle].append([voltage, current])
                         except ValueError as e:
                             print(f"ValueError: {e}")
                             continue
         except Exception as e:
-            print(f"Exception in CVWorker: {e}")
+            if self.serial_connection.is_open:
+                print(f"Exception in CVWorker: {e}")
+                
+            return
         finally:
             if self.serial_connection.is_open:
-                self.serial_connection.write(ResetCMD.encode("utf-8"))
+                # Ensure the serial connection is closed properly
                 self.serial_connection.close()
 
-class CVTab(QWidget):
-    def __init__(self, port):
+    def save_cycles_to_csv(self, now, CycleData, filename):
+        # Save each cycle's data in one CSV file, separated by cycle number, with headers and units
+        try:
+            with open(filename, "w", newline="") as csvfile:
+                writer = csv.writer(csvfile)
+                # Write test info as header
+                writer.writerow([f"Test Time: {now}"])
+                writer.writerow([f"Number of cycles: {self.parent().cycnum}"])
+                writer.writerow([f"Start potential: {self.parent().startvolt} V"])
+                writer.writerow([f"First inversion potential: {self.parent().firstvolt} V"])
+                writer.writerow([f"Second inversion potential: {self.parent().secondvolt} V"])
+                writer.writerow([f"Scan rate: {self.parent().scanrate} V/s"])
+                writer.writerow([f"Resistor value: {CurrentRange[self.parent().Rindex]}"])
+                writer.writerow([f"Capacitor value: {self.parent().CAPVal} F"])
+                writer.writerow([f"Filename: {filename}"])
+                writer.writerow([])
+
+                for idx, cycle in enumerate(CycleData):
+                    writer.writerow([f"Cycle {idx+1}"])
+                    writer.writerow(["Voltage (V)", f"Current ({CurrentUnit[self.parent().Rindex]})"])
+                    for row in cycle:
+                        writer.writerow(row)
+                    writer.writerow([])  # Blank line between cycles
+            print(f"Data saved to {filename}")
+        except Exception as e:
+            print(f"Error saving CSV: {e}")
+
+class CVTab(QWidget): 
+    def __init__(self, port): # Main widget for the Cyclic Voltammetry (CV) tab
         super().__init__()
         self.layout = QGridLayout()
         self.serial_connection = None
@@ -171,13 +221,8 @@ class CVTab(QWidget):
         self.layout.addWidget(self.canvas, 7, 0, 5, 5)
         self.setLayout(self.layout)
 
-    def update_port(self, newport):
-        self.PortNum = newport
-
-    def is_process_running(self):
-        return self.worker.isRunning()
-
-    def Run_CMD(self):
+ 
+    def Run_CMD(self): # Start the Cyclic Voltammetry (CV) measurement
         try:
             if self.I_NumCycles.text() == '' or self.I_StartVoltage.text() == '' or self.I_FirstVoltage.text() == '' or self.I_SecondVoltage.text() == '' or self.I_ScanRate.text() == '' or self.I_FileName.text() == '':
                 error_dialog = QMessageBox()
@@ -213,7 +258,7 @@ class CVTab(QWidget):
             self.secondvolt = float(self.I_SecondVoltage.text())
             self.scanrate = float(self.I_ScanRate.text())
             self.resistorval = int(ResistorValues[self.Rindex])
-            self.CAPVal = int(CapacitorValues[self.Cindex])
+            self.CAPVal = float(CapacitorValues[self.Cindex])
             self.filename = self.I_FileName.text()
 
             if self.cycnum <= 0 or self.cycnum > 100:
@@ -257,8 +302,6 @@ class CVTab(QWidget):
                 error_dialog.exec_()
                 return
 
-            
-
         except Exception as e:
             print(f"Error: {e}")
             return
@@ -274,18 +317,20 @@ class CVTab(QWidget):
         print(f"Filename: {self.filename}")
 
         transmit = f"{self.idnum},{DAC1},{DAC2},{DAC3},{self.period},{self.cycnum},{self.Rindex},{self.Cindex}\n"
+        #run the worker thread to start the CV measurement
 
         self.worker = CVWorker(transmit, self.PortNum)
-        self.worker.data_ready.connect(self.update_plot)
+        self.worker.setParent(self)  # So worker can access parent attributes for CSV
+        self.worker.data_ready.connect(self.update_plot)  # Update the plot with data from worker when ready
         self.worker.start()
-        self.processFlag= True
+        self.processFlag = True
 
-    def Stop_CMD(self):
+    def Stop_CMD(self): # Stop the Cyclic Voltammetry (CV) measurement
         if self.worker is not None and self.worker.isRunning():
-            self.worker.terminate()
-            self.worker.wait()
+            self.worker.terminate() #stop the worker thread
+            self.worker.wait() # wait for the thread to finish
             self.processFlag= False
-            if self.serial_connection is not None:
+            if self.serial_connection is not None: # Check if serial connection exists and close it if isd
                 if self.serial_connection.is_open:
                 
                     self.serial_connection.write(ResetCMD.encode("utf-8"))
@@ -293,18 +338,29 @@ class CVTab(QWidget):
 
             print("Task terminated")
 
-    def update_plot(self, Data):
+    def update_plot(self): # Update the plot with the data received from the worker thread
         self.ax.clear()
-        self.ax.plot(Data[:, 0], Data[:, 1])
+        # Check if CycleData exists as an attribute (set by the worker)
+        if hasattr(self.worker, "CycleData") and self.worker.CycleData:
+            # Plot each cycle with a legend
+            for idx, cycle in enumerate(self.worker.CycleData):
+                if len(cycle) > 0:
+                    cycle = np.array(cycle)
+                    self.ax.plot(cycle[:, 0], cycle[:, 1], label=f"Cycle {idx+1}")
+            self.ax.legend()
+        else:
+            # Fallback: plot all data if no cycle info
+            self.ax.plot(self.worker.data[:, 0], self.worker.data[:, 1], label="All Data")
         self.ax.grid(True)  # Add grid lines
         self.ax.set_xlabel("Voltage (V)")
         self.ax.set_ylabel(f"Current ({CurrentUnit[self.Rindex]})")
         self.canvas.draw()
-        self.processFlag= False
-        
-    def update_port(self, newport):
+
+        # Reset the worker and process flag
+        self.processFlag = False
+
+    def update_port(self, newport): # Update the port number for the serial connection
         self.PortNum = newport
 
-    def is_process_running(self):
-        
-        return self.processFlag 
+    def is_process_running(self): # Check if the worker thread is running
+        return self.processFlag

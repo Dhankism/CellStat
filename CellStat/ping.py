@@ -7,7 +7,7 @@ from cailbration import *
 BAUD_RATE = 115200
 
 class PortSelectionDialog(QDialog):
-    def __init__(self, ports):
+    def __init__(self, ports): #this a wigets to show what port is up and if there is more than one 1 teensy aloows to select the right one
         super().__init__()
         self.selected_port = None  # Variable to store the chosen port
         self.init_ui(ports)
@@ -41,7 +41,7 @@ class PortSelectionDialog(QDialog):
         self.accept()  # Close the dialog
 
 
-def ping_by_vid(teensy_vid='16C0'):
+def ping_by_vid(teensy_vid='16C0'): #automatically selects the teensy port by its VID
     """
     Ping devices connected to the system by their VID.
 
@@ -58,21 +58,23 @@ def ping_by_vid(teensy_vid='16C0'):
         if port.vid and f"{port.vid:04X}" == teensy_vid:
             matching_ports.append(port.device)
 
-    if not matching_ports:
-        print("No Teensy `devices detected.")
+    if not matching_ports:  # No matching ports found
+        print("No Teensy devices detected.")
         return None
 
     # If only one matching port, select it automatically
     if len(matching_ports) == 1:
         print(f"Automatically selected port: {matching_ports[0]}")
+        teensy_ping(matching_ports[0])  # Ping the Teensy
         return matching_ports[0]
 
     # If multiple matching ports, show a selection dialog
-    app = QApplication(sys.argv)
+    QApplication(sys.argv)
     dialog = PortSelectionDialog(matching_ports)
     if dialog.exec_() == QDialog.Accepted:
         selected_port = dialog.selected_port
         print(f"Selected port: {selected_port}")
+        teensy_ping(selected_port)  # Ping the selected Teensy
         return selected_port
 
     return None
@@ -81,19 +83,16 @@ def ping_by_vid(teensy_vid='16C0'):
 
 def teensy_ping(port):
     #opens the serial port and sends a ping to the teensy and sends the dac offset 
-    # if a teensy is connected to the 
+    # if a teensy is connected to the port
     
     ser = serial.Serial(port, 115200, timeout=1)
-    if ser.is_open():
-        
-        ser.write(b'0 ,'+str(DAC_OFFSET).encode()+b'\n')
+    if ser.is_open:
+        ser.write(b'0 ,' + str(DAC_OFFSET).encode() + b'\n')  # 0 is the command to set the DAC offset
         ser.flush()
         ser.close()
-
     else:
         print("Port not open")
-        ser.close()
-    
+
 
 
 

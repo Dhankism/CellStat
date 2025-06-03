@@ -122,7 +122,7 @@ void loop() {
         setResistor(rita_val);
         setCapacitor(cap_val);
 
-        // Optimized Serial Output 
+        // Serial Output 
        // Serial.printf("Running CV with V1=%d, V2=%d, V3=%d, period=%d, cycles=%d, setResistor=%d, setCapacitor=%d\n",
           //            V1, V2, V3, period, cycles, rita_val, cap_val);
 
@@ -186,6 +186,9 @@ void runCV(int V1, int V2, int V3, int period, int cycles) {
     // again loop for serial output this is done not int the first loop to ensure less time lose in the first loop
     datacount=0;
     for (int i_cycle = 0; i_cycle < cycles; i_cycle++) {
+
+      Serial.println("CYCLE_" + i_cycle);
+      
       for (int i = 0; i < numValues; i++) {
           int current_value = values[i];
           int next_index = (i + 1) % numValues;  // Wrap to first value after last
@@ -213,6 +216,7 @@ void runCV(int V1, int V2, int V3, int period, int cycles) {
               }
           }
       }
+       
     }
     Serial.println("END");
     digitalWrite(LED_BUILTIN, LOW);
@@ -225,21 +229,20 @@ void runPulse(int V1, int V2, int T1, int T2, int scanRate, int cycles) {
     datacount = 0;
 
     for (int i_cycle = 0; i_cycle < cycles; i_cycle++) {
+        analogWrite(DAC_OUT, V1);
         for (int step = 0; step < T1; step += scanRate) {
-            analogWrite(DAC_OUT, V1);
             if(smartDelayMicro(scanRate) == false) return;
             adcread[datacount++] = adc->adc0->analogRead(ADC_IN);
             //Serial.println(adcread[datacount]);
         }
-
-        for (int step = 0; step < T2; step += scanRate) {
-            analogWrite(DAC_OUT, V2);
+        analogWrite(DAC_OUT, V2);
+        for (int step = 0; step < T2; step += scanRate) { 
             if(smartDelayMicro(scanRate) == false) return ;
             adcread[datacount++] = adc->adc0->analogRead(ADC_IN);
             //Serial.println(adcread[datacount]);
         }
     }
-
+    // end the wiht he starting voltage 
     for (int step = 0; step < T1; step += scanRate) {
         analogWrite(DAC_OUT, V1);
         if(smartDelayMicro(scanRate) == false) return;
