@@ -109,7 +109,7 @@ void loop() {
 
     if (commandID == 0) {  
         // Case 0: Ping and set DAC ideal value value
-        Serial.println("Pinged");
+        Serial.println("PONG");
         DACidle = parameters[1];
         
     } 
@@ -187,7 +187,7 @@ void runCV(int V1, int V2, int V3, int period, int cycles) {
     datacount=0;
     for (int i_cycle = 0; i_cycle < cycles; i_cycle++) {
 
-      Serial.println("CYCLE_" + i_cycle);
+      Serial.println("CYCLE_" + String(i_cycle));
       
       for (int i = 0; i < numValues; i++) {
           int current_value = values[i];

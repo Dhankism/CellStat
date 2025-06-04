@@ -1,4 +1,6 @@
 # CVTab.py
+from encodings.punycode import T
+from tracemalloc import start
 from turtle import st
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,21 +25,22 @@ ResetCMD="RESET\n"
 class CVWorker(QThread): # Worker thread for Cyclic Voltammetry (CV) measurements
     data_ready = pyqtSignal(np.ndarray)
 
-    def __init__(self, transmit, port_name):
+    def __init__(self, transmit, port_name, timeout):
         super().__init__()
         self.transmit = transmit
         self.port_name = port_name
-
+        self.timeout = timeout
     def run(self):
         try:
             # Open the serial connection
             print(str(self.port_name))
-            self.serial_connection = serial.Serial(self.port_name, BAUD_RATE, timeout=TIMEOUT)
+            self.serial_connection = serial.Serial(self.port_name, BAUD_RATE, timeout=self.timeout + 10)
 
             # Send the message to the Teensy
             message = self.transmit.encode("utf-8")
             self.serial_connection.write(message)
             print("You Transmitted:", self.transmit)
+            print("estimated time for CV measurement:", self.timeout, "seconds")
 
             dataamount = 0
             Data = []
@@ -47,13 +50,19 @@ class CVWorker(QThread): # Worker thread for Cyclic Voltammetry (CV) measurement
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             filename = self.parent().I_FileName.text()
             start_time = time.time()  # Start time for timeout
-            time.sleep(10)
+            time.sleep(1)
+
             # Loop to detect end of measurement message from Arduino
             while True:
-                while (self.serial_connection.in_waiting == 0):  # Wait for data
-                    pass
+                # Wait for data or timeout
+                while self.serial_connection.in_waiting == 0:
+                  time.sleep(0.01)  # Prevents high CPU usage
+                  pass
+                    
 
                 received = self.serial_connection.readline().decode("utf-8")
+               
+
                 buffer += received
                 while "\n" in buffer:  # Split the buffer by newlines
                     line, buffer = buffer.split("\n", 1)
@@ -146,22 +155,27 @@ class CVTab(QWidget):
         self.L_NumCycles = QLabel("Number of Cycles:")
         self.I_NumCycles = QLineEdit()
         self.I_NumCycles.setPlaceholderText("Enter the number of cycles")
+        self.I_NumCycles.setText("2")  # Default value for debugging
 
         self.L_StartVoltage = QLabel("Start Potential (V):")
         self.I_StartVoltage = QLineEdit()
         self.I_StartVoltage.setPlaceholderText("Enter the start potential between -2.5 and +2.5 V")
+        self.I_StartVoltage.setText("0.0")  # Default value for debugging
 
         self.L_FirstVoltage = QLabel("First Inversion Potential (V):")
         self.I_FirstVoltage = QLineEdit()
         self.I_FirstVoltage.setPlaceholderText("Enter the first inversion potential")
+        self.I_FirstVoltage.setText("1.0")  # Default value for debugging
 
         self.L_SecondVoltage = QLabel("Second Inversion Potential (V):")
         self.I_SecondVoltage = QLineEdit()
         self.I_SecondVoltage.setPlaceholderText("Enter the second inversion potential")
+        self.I_SecondVoltage.setText("-1.0")  # Default value for debugging
 
         self.L_ScanRate = QLabel("Scan Rate (V/s):")
         self.I_ScanRate = QLineEdit()
         self.I_ScanRate.setPlaceholderText("Enter the scan rate")
+        self.I_ScanRate.setText("2")  # Default value for debugging
 
         # Added radio buttons for the resistor and capacitor
         self.L_CurrentRange = QLabel("Enter the i range :")
@@ -185,6 +199,7 @@ class CVTab(QWidget):
         self.L_FileName = QLabel("File Name:")
         self.I_FileName = QLineEdit()
         self.I_FileName.setPlaceholderText("Enter a name for the CSV file")
+        self.I_FileName.setText("debug_data.csv")  # Default value for debugging
 
         # Start and Stop and Save Buttons
         self.StartButton = QPushButton("Start")
@@ -221,22 +236,23 @@ class CVTab(QWidget):
         self.layout.addWidget(self.canvas, 7, 0, 5, 5)
         self.setLayout(self.layout)
 
- 
+        # After creating radio buttons for resistor and capacitor:
+        if self.RangeGroup.buttons():
+            self.RangeGroup.buttons()[3].setChecked(True)
+        if self.CapGroup.buttons():
+            self.CapGroup.buttons()[3].setChecked(True)
+
     def Run_CMD(self): # Start the Cyclic Voltammetry (CV) measurement
         try:
-            if self.I_NumCycles.text() == '' or self.I_StartVoltage.text() == '' or self.I_FirstVoltage.text() == '' or self.I_SecondVoltage.text() == '' or self.I_ScanRate.text() == '' or self.I_FileName.text() == '':
-                error_dialog = QMessageBox()
-                error_dialog.setIcon(QMessageBox.Critical)
-                error_dialog.setText("Please fill in all the fields.")
-                error_dialog.setWindowTitle("Input Error")
-                error_dialog.exec_()
-                return
-
+          
+            # Get values from input fields and radio buttons
+            
             i = [i for i, radio_btn in enumerate(self.RangeGroup.buttons()) if radio_btn.isChecked()]
             k = [k for k, radio_btn in enumerate(self.CapGroup.buttons()) if radio_btn.isChecked()]
             self.Rindex = i[0]
             self.Cindex = k[0]
-            if not i[0]:
+            
+            if not i:  # Check if any radio button is selected
                 error_dialog = QMessageBox()
                 error_dialog.setIcon(QMessageBox.Critical)
                 error_dialog.setText("Please select a current range.")
@@ -244,14 +260,14 @@ class CVTab(QWidget):
                 error_dialog.exec_()
                 return
 
-            if not k[0]:
+            if not k:
                 error_dialog = QMessageBox()
                 error_dialog.setIcon(QMessageBox.Critical)
                 error_dialog.setText("Please select a capacitor range.")
                 error_dialog.setWindowTitle("Input Error")
                 error_dialog.exec_()
                 return
-
+            
             self.cycnum = int(self.I_NumCycles.text())
             self.startvolt = float(self.I_StartVoltage.text())
             self.firstvolt = float(self.I_FirstVoltage.text())
@@ -259,7 +275,20 @@ class CVTab(QWidget):
             self.scanrate = float(self.I_ScanRate.text())
             self.resistorval = int(ResistorValues[self.Rindex])
             self.CAPVal = float(CapacitorValues[self.Cindex])
-            self.filename = self.I_FileName.text()
+            if self.I_FileName.text().endswith('.csv'):
+                self.filename = self.I_FileName.text()  # Use the provided filename
+            else:
+                self.filename = self.I_FileName.text() + '.csv'  # Ensure the filename ends with .csv
+
+
+            if self.I_NumCycles.text() == '' or self.I_StartVoltage.text() == '' or self.I_FirstVoltage.text() == '' or self.I_SecondVoltage.text() == '' or self.I_ScanRate.text() == '' or self.I_FileName.text() == '':
+                error_dialog = QMessageBox()
+                error_dialog.setIcon(QMessageBox.Critical)
+                error_dialog.setText("Please fill in all the fields.")
+                error_dialog.setWindowTitle("Input Error")
+                error_dialog.exec_()
+                return
+            
 
             if self.cycnum <= 0 or self.cycnum > 100:
                 error_dialog = QMessageBox()
@@ -286,13 +315,13 @@ class CVTab(QWidget):
                 return
            
            
-            self.idnum=1
+            self.idnum=1 # ID number for the CV measurement
             DAC1 = int(round(self.startvolt  * (DAC_QUANT * GAIN) + DAC_OFFSET))
             DAC2 = int(round(self.firstvolt  * (DAC_QUANT * GAIN) + DAC_OFFSET))
             DAC3 = int(round(self.secondvolt * (DAC_QUANT * GAIN) + DAC_OFFSET))
             self.numpoint = abs(DAC2 - DAC1) + abs(DAC3 - DAC2) + abs(DAC1 - DAC3)
             self.totpoint = self.numpoint * self.cycnum
-            self.period = int(round(1e6 / (self.scanrate * DAC_QUANT)))
+            self.period = int(round(1e6 / (self.scanrate * DAC_QUANT))) # in microseconds
 
             if self.totpoint > 52000:
                 error_dialog = QMessageBox()
@@ -319,7 +348,10 @@ class CVTab(QWidget):
         transmit = f"{self.idnum},{DAC1},{DAC2},{DAC3},{self.period},{self.cycnum},{self.Rindex},{self.Cindex}\n"
         #run the worker thread to start the CV measurement
 
-        self.worker = CVWorker(transmit, self.PortNum)
+        # guess the amout of time the CV measurement will take
+        estimated_time = self.totpoint * self.period * 1e-6  # in seconds
+
+        self.worker = CVWorker(transmit, self.PortNum, estimated_time)
         self.worker.setParent(self)  # So worker can access parent attributes for CSV
         self.worker.data_ready.connect(self.update_plot)  # Update the plot with data from worker when ready
         self.worker.start()
@@ -349,8 +381,11 @@ class CVTab(QWidget):
                     self.ax.plot(cycle[:, 0], cycle[:, 1], label=f"Cycle {idx+1}")
             self.ax.legend()
         else:
-            # Fallback: plot all data if no cycle info
-            self.ax.plot(self.worker.data[:, 0], self.worker.data[:, 1], label="All Data")
+            # If no CycleData, plot the entire Data array
+            Data = np.array(self.worker.data_ready)
+            if Data.size > 0:
+                self.ax.plot(Data[:, 0], Data[:, 1], label="CV Data")
+                self.ax.legend()
         self.ax.grid(True)  # Add grid lines
         self.ax.set_xlabel("Voltage (V)")
         self.ax.set_ylabel(f"Current ({CurrentUnit[self.Rindex]})")

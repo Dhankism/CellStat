@@ -89,6 +89,12 @@ def teensy_ping(port):
     if ser.is_open:
         ser.write(b'0 ,' + str(DAC_OFFSET).encode() + b'\n')  # 0 is the command to set the DAC offset
         ser.flush()
+        # Wait for a response from the Teensy
+        response = ser.readline().decode('utf-8').strip()
+        if response == 'PONG':
+            print(f"Teensy at {port} is responding with PONG.")
+        else:
+            print(f"Unexpected response from Teensy at {port}: {response}")
         ser.close()
     else:
         print("Port not open")
