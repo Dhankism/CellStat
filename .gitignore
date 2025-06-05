@@ -1,2 +1,4 @@
 /CellStat/venv
 /CellStat/__pycache__
+*.csv
+*.csv

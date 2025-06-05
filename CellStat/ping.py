@@ -1,3 +1,4 @@
+from time import sleep
 from serial import *
 import serial.tools.list_ports
 from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout, QLabel, QRadioButton, QPushButton, QButtonGroup
@@ -90,6 +91,7 @@ def teensy_ping(port):
         ser.write(b'0 ,' + str(DAC_OFFSET).encode() + b'\n')  # 0 is the command to set the DAC offset
         ser.flush()
         # Wait for a response from the Teensy
+        sleep(1)  # Wait for the Teensy to process the command
         response = ser.readline().decode('utf-8').strip()
         if response == 'PONG':
             print(f"Teensy at {port} is responding with PONG.")

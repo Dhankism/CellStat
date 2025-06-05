@@ -242,14 +242,14 @@ void runPulse(int V1, int V2, int T1, int T2, int scanRate, int cycles) {
             //Serial.println(adcread[datacount]);
         }
     }
-    // end the wiht he starting voltage 
+    // end the with  the starting voltage 
     for (int step = 0; step < T1; step += scanRate) {
         analogWrite(DAC_OUT, V1);
         if(smartDelayMicro(scanRate) == false) return;
         adcread[datacount++] = adc->adc0->analogRead(ADC_IN);
     }
 
-    Serial.println("Time(ms), ADC Output");
+    //Serial.println("Time(us), ADC Output");
     for (int i = 0; i < datacount; i++) {
         Serial.print(i * scanRate);
         Serial.print(",");
