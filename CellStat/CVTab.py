@@ -174,27 +174,27 @@ class CVTab(QWidget):
         self.L_NumCycles = QLabel("Number of Cycles:")
         self.I_NumCycles = QLineEdit()
         self.I_NumCycles.setPlaceholderText("Enter the number of cycles")
-        self.I_NumCycles.setText("3")  # Default value for debugging
+        #self.I_NumCycles.setText("3")  # Default value for debugging
 
         self.L_StartVoltage = QLabel("Start Potential (V):")
         self.I_StartVoltage = QLineEdit()
         self.I_StartVoltage.setPlaceholderText("Enter the start potential between -2.5 and +2.5 V")
-        self.I_StartVoltage.setText("0.0")  # Default value for debugging
+        #self.I_StartVoltage.setText("0.0")  # Default value for debugging
 
         self.L_FirstVoltage = QLabel("First Inversion Potential (V):")
         self.I_FirstVoltage = QLineEdit()
         self.I_FirstVoltage.setPlaceholderText("Enter the first inversion potential")
-        self.I_FirstVoltage.setText("-2.5")  # Default value for debugging
+        #self.I_FirstVoltage.setText("-2.5")  # Default value for debugging
 
         self.L_SecondVoltage = QLabel("Second Inversion Potential (V):")
         self.I_SecondVoltage = QLineEdit()
         self.I_SecondVoltage.setPlaceholderText("Enter the second inversion potential")
-        self.I_SecondVoltage.setText("2.5")  # Default value for debugging
+        #self.I_SecondVoltage.setText("2.5")  # Default value for debugging
 
         self.L_ScanRate = QLabel("Scan Rate (V/s):")
         self.I_ScanRate = QLineEdit()
         self.I_ScanRate.setPlaceholderText("Enter the scan rate")
-        self.I_ScanRate.setText("2")  # Default value for debugging
+        #self.I_ScanRate.setText("2")  # Default value for debugging
 
         # Added radio buttons for the resistor and capacitor
         self.L_CurrentRange = QLabel("Enter the i range :")
@@ -218,7 +218,7 @@ class CVTab(QWidget):
         self.L_FileName = QLabel("File Name:")
         self.I_FileName = QLineEdit()
         self.I_FileName.setPlaceholderText("Enter a name for the CSV file")
-        self.I_FileName.setText("debug_data.csv")  # Default value for debugging
+        #self.I_FileName.setText("debug_data.csv")  # Default value for debugging
 
         # Start and Stop and Save Buttons
         self.StartButton = QPushButton("Start")

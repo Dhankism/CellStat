@@ -1,4 +1,4 @@
-# PULTab.py
+# BATtab.py
 from encodings.punycode import T
 from tracemalloc import start
 from turtle import st
@@ -24,7 +24,8 @@ TIMEOUT = 30
 ResetCMD="RESET\n"
 serial_connection = None
 
-class PULWorker(QThread): # Worker thread for Pulse-based measurements
+class BATWorker(QThread): # Worker thread for Battery Test measurements
+    
     data_ready = pyqtSignal(np.ndarray)
     
 
@@ -102,16 +103,23 @@ class PULWorker(QThread): # Worker thread for Pulse-based measurements
                 serial_connection.close()
 
     def save_cycles_to_csv(self, now, CycleData, filename):
-        # Ensure unique filename by appending _1, _2, etc. if file exists
-        base, ext = os.path.splitext(filename)
+        # Save the CSV file inside the folder specified by 'filename'
+        currentdirectory = os.getcwd()
+        # Compose the CSV file name (e.g., BAT_data_1.csv, BAT_data_2.csv, etc.)
+        # Find a unique filename by incrementing a counter if file exists
+        base = os.path.basename(filename)
         counter = 1
-        unique_filename = filename
-        while os.path.exists(unique_filename):
-            unique_filename = f"{base}_{counter}{ext}"
+        while True:
+            csv_filename = f"{base}_{counter}.csv"
+            file_path = os.path.join(currentdirectory, filename, csv_filename)
+            if not os.path.exists(file_path):
+                break
             counter += 1
+        # Save inside the folder
+        file_path = os.path.join(currentdirectory, filename, csv_filename)
 
         try:
-            with open(unique_filename, "w", newline="") as csvfile:
+            with open(file_path, "w", newline="") as csvfile:
                 writer = csv.writer(csvfile)
                 # Write test info as header
                 writer.writerow([f"Test Time: {now}"])
@@ -131,54 +139,65 @@ class PULWorker(QThread): # Worker thread for Pulse-based measurements
                 # Write data: CycleData[0] contains all [time, current] pairs
                 for row in CycleData[0]:
                     writer.writerow(row)
-            print(f"Data saved to {unique_filename}")
+            print(f"Data saved to {file_path}")
         except Exception as e:
             print(f"Error saving CSV: {e}")
 
-class PULTab(QWidget): 
-    def __init__(self, port): # Main widget for the Pulse-based tab
+class BATTab(QWidget): 
+    def __init__(self, port): # Main widget for the Battery Test tab
         super().__init__()
         self.layout = QGridLayout()
         global serial_connection
-        # Label and Line Edit for SWV Tab
-        i = QLabel("PUL Tab")
+        # Label and Line Edit for BAT Tab
+        i = QLabel("BAT Tab")
         self.PortNum = port
         self.worker = None
         self.processFlag= False
 
-        # Pulse-based parameters
+        # Battery Test parameters
         # L = Label
         # I = Input
         self.L_NumCycles = QLabel("Number of Pulses:")
         self.I_NumCycles = QLineEdit()
         self.I_NumCycles.setPlaceholderText("Enter the number of pulses (1-10)")
-        self.I_NumCycles.setText("3")  # Default value for debugging
+        #self.I_NumCycles.setText("3")  # Default value for debugging
 
         self.L_StartVoltage = QLabel("Start Potential (V):")
         self.I_StartVoltage = QLineEdit()
         self.I_StartVoltage.setPlaceholderText("Enter the start potential between -2.5 and +2.5 V")
-        self.I_StartVoltage.setText("0.0")  # Default value for debugging
+        #self.I_StartVoltage.setText("0.0")  # Default value for debugging
 
         self.L_StepVoltage = QLabel("Step Potential (V):")
         self.I_StepVoltage = QLineEdit()
         self.I_StepVoltage.setPlaceholderText("Enter the step potential between -2.5 and +2.5 V")
-        self.I_StepVoltage.setText("-2.5")  # Default value for debugging
+        #self.I_StepVoltage.setText("-2.5")  # Default value for debugging
 
         self.L_StartTime = QLabel("Start Time (s):")
         self.I_StartTime = QLineEdit()
         self.I_StartTime.setPlaceholderText("Enter the start time in seconds")
-        self.I_StartTime.setText("2")  # Default value
+        #self.I_StartTime.setText("2")  # Default value
 
         self.L_StepTime = QLabel("Step Time (s):")
         self.I_StepTime = QLineEdit()
         self.I_StepTime.setPlaceholderText("Enter the step time in seconds")
-        self.I_StepTime.setText("5")  # Default value
+        #self.I_StepTime.setText("2")  # Default value
 
 
         self.L_ScanRate = QLabel("Scan Rate (Hz):")
         self.I_ScanRate = QLineEdit()
         self.I_ScanRate.setPlaceholderText("Enter the scan rate")
-        self.I_ScanRate.setText("10")  # Default value for debugging
+        #self.I_ScanRate.setText("10")  # Default value for debugging
+
+        self.L_TimeInterval = QLabel("Time Interval (s):")
+        self.I_TimeInterval = QLineEdit()
+        self.I_TimeInterval.setPlaceholderText("Enter the test interval in seconds")
+        #self.I_TimeInterval.setText("30")  # Default value for debugging
+
+        self.L_TestAmount = QLabel(" Amount of test to be done:")
+        self.I_TestAmount = QLineEdit()
+        self.I_TestAmount.setPlaceholderText("Enter the amount of test to be done")
+        #self.I_TestAmount.setText("3")  # Default value for debugging
+
 
         # Added radio buttons for the resistor and capacitor
         self.L_CurrentRange = QLabel("Enter the i range :")
@@ -201,8 +220,8 @@ class PULTab(QWidget):
 
         self.L_FileName = QLabel("File Name:")
         self.I_FileName = QLineEdit()
-        self.I_FileName.setPlaceholderText("Enter a name for the CSV file")
-        self.I_FileName.setText("PUL_data.csv")  # Default value for debugging
+        self.I_FileName.setPlaceholderText("Enter a name for the folder")
+        self.I_FileName.setText("BAT_data")  # Default value for debugging
 
    
         # Start and Stop and Save Buttons
@@ -224,14 +243,17 @@ class PULTab(QWidget):
         self.layout.addWidget(self.I_NumCycles, 1, 3)
         self.layout.addWidget(self.L_ScanRate, 2, 2)
         self.layout.addWidget(self.I_ScanRate, 2, 3)
+        self.layout.addWidget(self.L_TestAmount, 3, 2)
+        self.layout.addWidget(self.I_TestAmount, 3, 3)
+
 
         self.layout.addWidget(self.L_StartTime, 2, 0)
         self.layout.addWidget(self.I_StartTime, 2, 1)
         self.layout.addWidget(self.L_StepTime, 3, 0)
         self.layout.addWidget(self.I_StepTime, 3, 1)
-
-       
-
+        self.layout.addWidget(self.L_TimeInterval, 4, 0)
+        self.layout.addWidget(self.I_TimeInterval, 4, 1)
+        
         self.layout.addWidget(self.L_CurrentRange, 5, 0)
         self.layout.addLayout(self.RangeList, 5, 1, 1, 3)  # Adjusted to span multiple columns
         self.layout.addWidget(self.L_CapRange, 6, 0)
@@ -254,7 +276,7 @@ class PULTab(QWidget):
         if self.CapGroup.buttons():
             self.CapGroup.buttons()[3].setChecked(True)
 
-    def Run_CMD(self): # Start the Pulse-based measurement
+    def Run_CMD(self): # Start the Battery Test measurement
         try:
           
             # Get values from input fields and radio buttons
@@ -279,8 +301,8 @@ class PULTab(QWidget):
                 error_dialog.setWindowTitle("Input Error")
                 error_dialog.exec_()
                 return
-        
-            if self.I_NumCycles.text() == '' or self.I_StartVoltage.text() == '' or self.I_StepVoltage.text() == '' or self.I_StartTime.text() == '' or self.I_StepTime.text() == '' or self.I_ScanRate.text() == '' or self.I_FileName.text() == '':
+
+            if self.I_NumCycles.text() == '' or self.I_StartVoltage.text() == '' or self.I_StepVoltage.text() == '' or self.I_StartTime.text() == '' or self.I_StepTime.text() == '' or self.I_ScanRate.text() == '' or self.I_FileName.text() == '' or self.I_TimeInterval.text() == '' or self.I_TestAmount.text() == '':
                 error_dialog = QMessageBox()
                 error_dialog.setIcon(QMessageBox.Critical)
                 error_dialog.setText("Please fill in all the fields.")
@@ -294,14 +316,19 @@ class PULTab(QWidget):
             self.starttime = float(self.I_StartTime.text())
             self.steptime = float(self.I_StepTime.text())
             self.scanrate = float(self.I_ScanRate.text())
+            self.downtime = int(self.I_TimeInterval.text())
+            self.maxtests = int(self.I_TestAmount.text())
             self.resistorval = int(ResistorValues[self.Rindex])
             self.CAPVal = float(CapacitorValues[self.Cindex])
-            if self.I_FileName.text().endswith('.csv'):
-                self.filename = self.I_FileName.text()  # Use the provided filename
-            else:
-                self.filename = self.I_FileName.text() + '.csv'  # Ensure the filename ends with .csv
+            self.filename = self.I_FileName.text()  # Use the provided filename
 
-
+            if not self.filename:
+                error_dialog = QMessageBox()
+                error_dialog.setIcon(QMessageBox.Critical)
+                error_dialog.setText("Please enter a valid folder name.")
+                error_dialog.setWindowTitle("Input Error")
+                error_dialog.exec_()
+                return
 
             if self.cycnum < 0 or self.cycnum > 10:
                 error_dialog = QMessageBox()
@@ -326,9 +353,26 @@ class PULTab(QWidget):
                 error_dialog.setWindowTitle("Input Error")
                 error_dialog.exec_()
                 return
+            
+            if self.maxtests <= 0 :
+                error_dialog = QMessageBox()
+                error_dialog.setIcon(QMessageBox.Critical)
+                error_dialog.setText("Test amount must be greater than 0")
+                error_dialog.setWindowTitle("Input Error")
+                error_dialog.exec_()
+                return
+            
+            if self.downtime <= 0 or self.downtime < (self.cycnum * (self.starttime + self.steptime+ 5)+ self.starttime):
+                error_dialog = QMessageBox()
+                error_dialog.setIcon(QMessageBox.Critical)
+                error_dialog.setText("Time interval must be greater than 0 and greater than the total time of the test")
+                error_dialog.setInformativeText(f"Total time of one test is {self.cycnum * (self.starttime + self.steptime+ 5)+ self.starttime} seconds")
+                error_dialog.setWindowTitle("Input Error")
+                error_dialog.exec_()
+                return
            
            
-            self.idnum=2 # ID number for the PUL measurement
+            self.idnum=2 # ID number for the BAT measurement
             DAC1 = int(round(self.startvolt  * (DAC_QUANT * GAIN) + DAC_OFFSET))
             DAC2 = int(round(self.stepvolt  * (DAC_QUANT * GAIN) + DAC_OFFSET))
             T1= int(round(self.starttime * 1e6))  # Convert seconds to microseconds
@@ -349,34 +393,75 @@ class PULTab(QWidget):
             print(f"Error: {e}")
             return
 
-        print("Running PUL with the following parameters:")
+        print("Running BAT with the following parameters:")
         print(f"Number of cycles: {self.cycnum}")
         print(f"Start potential: {self.startvolt}")
         print(f"Step potential: {self.stepvolt}")
         print(f"Start time: {self.starttime}")
         print(f"Step time: {self.steptime}")
         print(f"Scan rate: {self.scanrate}")
+        print(f"Time interval: {self.downtime}")
+        print(f"Test amount: {self.maxtests}")
         print(f"Resistor value: {self.resistorval}")
         print(f"Capacitor value: {self.CAPVal}")
         print(f"Filename: {self.filename}")
 
-        transmit = f"{self.idnum},{DAC1},{DAC2},{T1},{T2},{self.scanrate},{self.cycnum},{self.Rindex},{self.Cindex}\n"
-        #run the worker thread to start the PUL measurement
+        #make a folder using the file name if it does exist add _#
+        if not os.path.exists(self.filename):
+                # If it doesn't exist, create it
+            os.makedirs(self.filename)
+            self.folder_name =f"{self.filename}"
+        else:
+                # If it exists, find a new name by adding a number
+            i = 1
+            while os.path.exists(f"{self.filename}_{i}"):
+                    i += 1
+            os.makedirs(f'{self.filename}_{i}')
+            self.foldername =f'{self.filename}_{i}'
 
-        # guess the amout of time the PUL measurement will take
-        estimated_time = self.totpoint * self.scanrate * 1e-6  # in seconds
+        print(f'Folder {self.foldername} created.')
+        self.foldername = os.path.abspath(self.foldername)#make it a directory
 
-        self.worker = PULWorker(transmit, self.filename, self.PortNum, estimated_time)
-        self.worker.setParent(self)  # So worker can access parent attributes for CSV
-        self.worker.data_ready.connect(self.update_plot)  # Update the plot with data from worker when ready
-        self.worker.start()
+        self.transmit = f"{self.idnum},{DAC1},{DAC2},{T1},{T2},{self.scanrate},{self.cycnum},{self.Rindex},{self.Cindex}\n"
+     
+        # guess the amout of time the BAT measurement will take
+        self.estimated_time = self.totpoint * self.scanrate * 1e-6  # in seconds
+
+        self.test_count = 1
+
+        self.run_data()  # Run the first test immediately
+
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.run_data)
+        self.timer.start(1000 * self.downtime)  # Repeat every downtime seconds
         self.processFlag = True
 
-    def Stop_CMD(self): # Stop the Pulse-based measurement
+
+
+    def run_data(self): #this is just used to run the worker thread and check if the test is done and count the tests
+        if self.test_count >= self.maxtests:
+            self.timer.stop()
+            print("All tests completed.")
+            return
+
+        # Place your test-starting logic here (from Run_CMD)
+        # For example:
+        self.worker = BATWorker(self.transmit, self.foldername, self.PortNum, self.estimated_time)
+        self.worker.setParent(self)
+        self.worker.data_ready.connect(self.update_plot)
+        self.worker.start()
+       
+
+        self.test_count += 1
+
+
+    
+
+    def Stop_CMD(self): # Stop the Battery Test measurement
         if self.worker is not None and self.worker.isRunning():
             self.worker.terminate() #stop the worker thread
             self.worker.wait() # wait for the thread to finish dont know if needed just to be sure
-            self.processFlag= False
+            
             if serial_connection is not None: # Check if serial connection exists and close it if isd
                 if serial_connection.is_open:
 
@@ -385,12 +470,19 @@ class PULTab(QWidget):
                     print("Task terminated")
             else:
                 print("No active serial connection to terminate")
+        self.timer.stop()  # Stop the timer if it exists
+        print("Battery Test stopped")
+        # Reset the worker and test count
+        self.test_count = 0
+        self.processFlag= False
+
+        
 
 
     def update_plot(self): # Update the plot with the data received from the worker thread
         self.ax.clear()
 
-        # Plot time (us) vs current for SWV (no cycles)
+        # Plot time (us) vs current for BAT (no cycles)
         if len(self.worker.CycleData) > 0 and len(self.worker.CycleData[0]) > 0:
             data = np.array(self.worker.CycleData[0])
             self.ax.plot(data[:, 0], data[:, 1])
@@ -404,6 +496,24 @@ class PULTab(QWidget):
 
         # Reset the worker and process flag
         self.processFlag = False
+        
+        #save the plot as an image
+        currentdirectory = os.getcwd()
+        # Compose the CSV file name (e.g., BAT_data_1.csv, BAT_data_2.csv, etc.)
+        # Find a unique filename by incrementing a counter if file exists
+        base = os.path.basename(self.foldername)
+        counter = 1
+        while True:
+            png_filename = f"{base}_{counter}.png"
+            file_path = os.path.join(currentdirectory, self.foldername, png_filename)
+            if not os.path.exists(file_path):
+                break
+            counter += 1
+        # Save inside the folder
+        file_path = os.path.join(currentdirectory, self.foldername, png_filename)
+        # Save the plot as an image
+        self.figure.savefig(file_path)
+
 
     def update_port(self, newport): # Update the port number for the serial connection
         self.PortNum = newport

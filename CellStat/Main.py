@@ -3,8 +3,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget, QPushButton, QMessageBox
 from CVTab import CVTab
 from PULTab import PULTab
-
-#from SWVTab import SWVTab
+from BATtab import BATTab
 from ping import ping_by_vid
 
 class MainWindow(QMainWindow):
@@ -21,10 +20,14 @@ class MainWindow(QMainWindow):
         self.tabs = QTabWidget()
         self.cv_tab = CVTab(self.port)
         self.pulse_tab = PULTab(self.port)
+        self.bat_tab = BATTab(self.port)
 
         # Set custom tab names
         self.tabs.addTab(self.cv_tab, "CV")
         self.tabs.addTab(self.pulse_tab, "Pulse")
+        self.tabs.addTab(self.bat_tab, "BAT")
+        # Set the initial tab to CVTab
+        self.tabs.setCurrentWidget(self.bat_tab)
 
         # Set the central widget of the main window
         self.setCentralWidget(self.tabs)
@@ -40,10 +43,12 @@ class MainWindow(QMainWindow):
         
     def update_port(self):
         if not self.cv_tab.is_process_running() and not self.swv_tab.is_process_running():
+            # Update the port by pinging for Teensy VID
             self.port = str(ping_by_vid())
-
+            # Update the port in all tabs
             self.cv_tab.update_port(self.port)
             self.pulse_tab.update_port(self.port)
+            self.bat_tab.update_port(self.port)
 
             QMessageBox.information(self, "Port Updated", f"Port: {self.port}")
             self.update_port_button.setText(f"Update Port (Current: {self.port})")
